@@ -1,0 +1,387 @@
+---
+import axios from "axios";
+import Layout from "../../layouts/Layout.astro";
+import Maincontent from "../../layouts/Maincontent.astro";
+
+const apiUrl = import.meta.env.PUBLIC_API_KEY;
+
+
+export async function getStaticPaths() {
+  const response = await axios.get(`${apiUrl}/tables`);
+  const users = response.data;
+  return {
+    paths: users.map((user) => ({
+      params: { id: Buffer.from(user.id.toString()).toString("base64") },
+    })),
+    fallback: false,
+  };
+}
+
+const { id } = Astro.params;
+
+const fetchData = async () => {
+  try {
+    const response = await axios.get(`${apiUrl}/tables/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch data:", error);
+    return null;
+  }
+};
+
+let userData = await fetchData();
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+async function checkImage(url) {
+  try {
+    const response = await fetch(url);
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+const defaultImageUrl = "/images/wtd.jpg";
+const profileImageUrl = (await checkImage(userData.line_usrphoto))
+  ? userData.line_usrphoto
+  : defaultImageUrl;
+---
+
+<Layout title="User Profile" client:load />
+
+{
+  userData ? (
+    <Maincontent title="User Profile">
+      <div class="name-edit">
+        <h2>
+          {userData.first_name}
+          {userData.last_name}
+          {`(${userData.nickname})`}
+        </h2>
+        <a href="#" class="btn btn-primary btn-sm" id="edit-button">
+          แก้ไขข้อมูล
+        </a>
+        <span class="close-button">&times;</span>
+      </div>
+
+      <div class="profile-container">
+        <img
+          src={profileImageUrl}
+          alt="Profile Picture"
+          class="profile-picture"
+        />
+
+        <div class="profile-details">
+          <p>โทรศัพท์: {userData.tel}</p>
+          <p>Email: {userData.email}</p>
+          <p>Role: {userData.status}</p>
+          <p>Status: {userData.verify}</p>
+          <p>วันที่สมัคร: {formatDate(userData.datetime)}</p>
+        </div>
+      </div>
+
+      <div>
+        <h3>
+          กลุ่มที่สังกัด{" "}
+          <a href="#" id="manage-group-link" class="btn btn-primary btn-sm">
+            จัดการกลุ่ม
+          </a>
+        </h3>
+        <ul class="group-list">
+          {userData.groups.length > 0 ? (
+            userData.groups.map((group) => <li>{group}</li>)
+          ) : (
+            <li>ไม่มีกลุ่ม</li>
+          )}
+        </ul>
+
+        <h3>
+          Leaderกลุ่ม{" "}
+          <a
+            href="#"
+            id="manage-leader-group-link"
+            class="btn btn-primary btn-sm"
+          >
+            จัดการกลุ่มที่เป็นLeader
+          </a>
+        </h3>
+        <ul class="group-list">
+          {userData.leaderGroups && userData.leaderGroups.length > 0 ? (
+            userData.leaderGroups.map((group) => <li>{group}</li>)
+          ) : (
+            <li>ไม่มีกลุ่มที่เป็นLeader</li>
+          )}
+        </ul>
+      </div>
+
+      <div id="edit-modal" class="modal">
+        <div class="modal-content">
+          <h2>แก้ไขข้อมูลส่วนตัว</h2>
+          <form action="/action_page.php">
+            <div class="form-group">
+              <label for="fname">First name:</label>
+              <input
+                type="text"
+                id="fname"
+                name="first_name"
+                value={userData.first_name}
+              />
+            </div>
+            <div class="form-group">
+              <label for="lname">Last name:</label>
+              <input
+                type="text"
+                id="lname"
+                name="last_name"
+                value={userData.last_name}
+              />
+            </div>
+            <div class="form-group">
+              <label for="nickname">Nickname:</label>
+              <input
+                type="text"
+                id="nickname"
+                name="nickname"
+                value={userData.nickname}
+              />
+            </div>
+            <div class="form-group">
+              <label for="tel">Tel:</label>
+              <input type="text" id="tel" name="tel" value={userData.tel} />
+            </div>
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input
+                type="text"
+                id="email"
+                name="email"
+                value={userData.email}
+              />
+            </div>
+            <div class="form-group " style="display: flex;">
+              <label for="status">Role:</label>
+              <select id="status" name="status">
+                <option value="user" selected={userData.status === "user"}>
+                  User
+                </option>
+                <option value="admin" selected={userData.status === "admin"}>
+                  Admin
+                </option>
+                <option value="d2s" selected={userData.status === "d2s"}>
+                  D2S
+                </option>
+                <option value="leader" selected={userData.status === "leader"}>
+                  Leader
+                </option>
+              </select>
+              <label for="verify">Status:</label>
+              <select id="verify" name="verify">
+                <option value="ใช้งาน" selected={userData.verify === "1"}>
+                  ใช้งาน
+                </option>
+                <option value="ออก" selected={userData.verify === "0"}>
+                  ยังไม่อนุมัติ
+                </option>
+                <option
+                  value="ยังไม่อนุมัติ"
+                  selected={userData.verify === "10"}
+                >
+                  ออก
+                </option>
+              </select>
+            </div>
+            <div class="form-group"></div>
+            <input type="submit" value="Submit" class="btn btn-primary" />
+          </form>
+        </div>
+      </div>
+    </Maincontent>
+  ) : (
+    <Maincontent title="User Profile">
+      <p>ไม่พบข้อมูลผู้ใช้</p>
+    </Maincontent>
+  )
+}
+
+<style>
+  .name-edit {
+    display: flex;
+    align-items: center;
+  }
+  .name-edit a {
+    margin-left: 20px;
+  }
+
+  .profile-container {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  .profile-details {
+    width: 40%;
+    flex: 1;
+    margin-left: 5%;
+  }
+  .profile-picture {
+    margin-left: 20px;
+    max-width: 150px;
+    border-radius: 15px;
+    border: 2px solid #ddd;
+    box-shadow: 0 4px 8px rgba(33, 33, 33, 0.3);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .profile-picture:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+  }
+  .group-list {
+    display: flex;
+    flex-wrap: wrap;
+    list-style-type: none;
+    padding: 0;
+  }
+  .group-list li {
+    margin-right: 10px;
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+  }
+  .modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+  }
+  .close-button {
+    position: absolute;
+    right: 25px;
+    top: 10px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  .close-button:hover,
+  .close-button:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .form-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+  }
+  .btn-primary {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+</style>
+
+<script>
+  const frontEnd = import.meta.env.PUBLIC_FRONTEND_UrL;
+  import axios from "axios";
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const editButton = document.getElementById("edit-button");
+    const modal = document.getElementById("edit-modal");
+    const closeButton = document.querySelector(".close-button");
+
+    editButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      modal.style.display = "block";
+    });
+
+    closeButton.addEventListener("click", () => {
+      window.location.href = `${frontEnd}/tables`;
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    });
+
+    const manageGroupLink = document.getElementById("manage-group-link");
+    manageGroupLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      const currentUrl = window.location.href;
+      const base64Id = currentUrl.split("/").pop();
+      window.location.href = `/tables/manage-group/${base64Id}`;
+    });
+
+    const manageGroupLeaderLink = document.getElementById(
+      "manage-leader-group-link"
+    );
+    manageGroupLeaderLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      const currentUrl = window.location.href;
+      const base64Id = currentUrl.split("/").pop();
+      window.location.href = `/tables/manage-groupleader/${base64Id}`;
+    });
+
+    const form = document.querySelector("form");
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      const currentUrl = window.location.href;
+      const base64Id = currentUrl.split("/").pop();
+
+      try { 
+        const apiUrl = import.meta.env.PUBLIC_API_KEY;
+        const response = await axios.put(
+          `${apiUrl}/tables/${base64Id}`,
+          data
+        );
+        if (response.status === 200) {
+          modal.style.display = "none";
+          window.location.reload();
+        } else {
+          alert("Update failed");
+        }
+      } catch (error) {
+        console.error("Error updating member:", error);
+        alert("An error occurred while updating the member");
+      }
+    });
+  });
+</script>

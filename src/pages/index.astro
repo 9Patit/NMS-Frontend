@@ -1,0 +1,18 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Maincontent from "../layouts/Maincontent.astro";
+
+// ตรวจสอบว่ามีคุกกี้ 'auth_token' หรือไม่
+const authToken = Astro.cookies.get("auth_token");
+
+if (!authToken) {
+  return Astro.redirect("/login");
+}
+---
+
+<>
+  <Layout title="Notice Me Senpai" />
+  <Maincontent title="Notice Me Senpai">
+    <h1>Welcome back, Senpai!</h1>
+  </Maincontent>
+</>

@@ -1,0 +1,22 @@
+<main>
+  <h1>Logging out...</h1>
+</main>
+
+<script>
+  const apiUrl = import.meta.env.PUBLIC_API_KEY;
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const response = await fetch(`${apiUrl}/logout`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      if (response.ok) {
+        window.location.href = '/login';
+      } else {
+        console.error('Failed to log out');
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  });
+</script>

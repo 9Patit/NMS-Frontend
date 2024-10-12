@@ -1,0 +1,16 @@
+---
+import Layout from "../../../layouts/Layout.astro";
+import Maincontent from "../../../layouts/Maincontent.astro";
+import ManageGroupLeader from "../../../components/manage-groupleader";
+const authToken = Astro.cookies.get('auth_token');
+
+if (!authToken) { return Astro.redirect('/login');}
+
+const { id } = Astro.params;
+---
+
+<Maincontent title="Manage Group">
+  <ManageGroupLeader id={id} client:load/>
+</Maincontent>
+
+<Layout title="Manage Group" />

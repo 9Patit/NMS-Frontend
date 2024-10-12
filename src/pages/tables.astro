@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Datatables from "../components/data-tables.astro";
+import Maincontent from "../layouts/Maincontent.astro";
+
+const authToken = Astro.cookies.get('auth_token');
+
+if (!authToken) { return Astro.redirect('/login');}
+---
+<Layout title="Data table" client:load/>
+
+<Maincontent title="Datatables">
+    <Datatables client:load/>
+</Maincontent>
+
