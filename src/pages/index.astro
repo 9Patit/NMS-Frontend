@@ -1,18 +1,27 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Maincontent from "../layouts/Maincontent.astro";
+import { authenticate } from "../utils/auth";
 
-// ตรวจสอบว่ามีคุกกี้ 'auth_token' หรือไม่
-const authToken = Astro.cookies.get("auth_token");
+let userId: string, displayName: string, pictureUrl: string, role: string;
 
-if (!authToken) {
-  return Astro.redirect("/login");
+const req = Astro.request;
+
+const authResult = await authenticate(req); 
+if (authResult.redirect) {
+  
+  return Astro.redirect(authResult.redirect);
+} else {
+  // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
+  userId = authResult.userId;
+  displayName = authResult.displayName;
+  pictureUrl = authResult.pictureUrl;
+  role = authResult.role;
 }
 ---
-
 <>
-  <Layout title="Notice Me Senpai" />
+  <Layout title="Notice Me Senpai" displayName={displayName} pictureUrl={pictureUrl} role={role} />  
   <Maincontent title="Notice Me Senpai">
-    <h1>Welcome back, Senpai!</h1>
+    <h1 class="index-content">สวัสดีคุณ {displayName}</h1>
   </Maincontent>
 </>

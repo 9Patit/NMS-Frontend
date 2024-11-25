@@ -1,0 +1,243 @@
+---
+import axios from "axios";
+import Layout from "../layouts/Layout.astro";
+import Maincontent from "../layouts/Maincontent.astro";
+import { authenticate } from "../utils/auth";
+import ProfileCard from "../components/profileCard";
+
+const apiUrl = import.meta.env.PUBLIC_API_KEY;
+let userId: string,
+  displayName: string,
+  pictureUrl: string,
+  role: string,
+  memberId: number;
+
+const req = Astro.request;
+
+const authResult = await authenticate(req);
+if (authResult.redirect) {
+  // ถ้าต้องการเปลี่ยนเส้นทาง ให้เปลี่ยนเส้นทางไปที่หน้าล็อกอิน
+  return Astro.redirect(authResult.redirect);
+} else {
+  userId = authResult.userId;
+  displayName = authResult.displayName;
+  pictureUrl = authResult.pictureUrl;
+  role = authResult.role;
+  memberId = authResult.id;
+}
+
+// แปลง memberId เป็น Base64
+const memberIdBase64 = btoa(memberId.toString());
+
+//============================================================================
+
+const fetchData = async () => {
+  try {
+    // ดึง JWT token จากคุกกี้ในฝั่งเซิร์ฟเวอร์
+    const getToken = Astro.cookies.get("auth_token");
+    const token = getToken.value;
+    if (!token) throw new Error("JWT token not found in cookies");
+
+    const response = await axios.get(
+      `${apiUrl}/user-details/${memberIdBase64}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch data:", error);
+    return null;
+  }
+};
+
+let userData = await fetchData();
+console.log("ตรวจสอบว่า userData มีค่า>>>", userData);
+---
+
+
+<Layout
+  title="ข้อมูลสมาชิก"
+  displayName={displayName}
+  pictureUrl={pictureUrl}
+  role={role}
+/>
+
+{
+  userData ? (
+    <Maincontent title="ข้อมูลสมาชิก">
+      <ProfileCard userData={userData} client:load />      
+    </Maincontent>
+  ) : (
+    <Maincontent title="ข้อมูลสมาชิก">
+      <p>ไม่พบข้อมูลผู้ใช้</p>
+    </Maincontent>
+  )
+}
+
+<!-- <style>
+    /* สไตล์การ์ดของฟอร์ม */
+    .edit-card {
+      background-color: #ffffff;
+      margin: 2rem auto;
+      padding: 2rem;
+      border: 1px solid #d1d1d1;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+      max-height: 100vh;
+    }
+
+    /* สไตล์ฟอร์ม */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group p {
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 0.4rem;
+    }
+
+    /* สไตล์ input */
+    input[type="text"],
+    input[type="tel"] {
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      outline: none;
+      transition:
+        border-color 0.3s,
+        box-shadow 0.3s;
+    }
+
+    input[type="text"]:focus,
+    input[type="tel"]:focus {
+      border-color: #007bff;
+      box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.4);
+    }
+    /* ปุ่มส่ง */
+    .btn {
+      display: inline-block;
+      width: 100%;
+      padding: 0.8rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition:
+        background-color 0.3s,
+        box-shadow 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    }
+  </style> -->
+
+<!-- <script>
+    import axios from "axios";
+    import { jwtDecode, type JwtPayload } from "jwt-decode";
+    import Swal from "sweetalert2";
+
+    // ฟังก์ชันสำหรับดึงค่า cookie
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    const token = getCookie("auth_token");
+
+    if (token) {
+      // กำหนดประเภทให้ payload ที่ต้องการ
+      const decodedToken = jwtDecode<JwtPayload & { id: number }>(token);
+
+      // ตรวจสอบว่ามี id อยู่ใน decodedToken
+      const memberId = decodedToken.id;
+      if (memberId) {
+        const memberIdBase64 = btoa(memberId.toString());
+        console.log("ตรวจสอบว่า memberIdBase64 ถูกต้อง", memberIdBase64);
+      } else {
+        console.error("JWT token ไม่มีคุณสมบัติ 'id'");
+      }
+    } else {
+      console.error("ไม่พบ token");
+    }
+
+    // ฟังก์ชันสำหรับตรวจสอบเบอร์โทรศัพท์
+    function limitPhoneNumberLength(e) {
+      const input = e.target;
+      const value = input.value.replace(/\D/g, ""); // ลบตัวอักษรที่ไม่ใช่ตัวเลขทั้งหมด
+      if (value.length > 10) {
+        input.value = value.slice(0, 10); // ตัดให้เหลือ 10 หลัก
+      } else {
+        input.value = value;
+      }
+    }
+
+    function allowOnlyNumbers(e) {
+      const charCode = e.charCode ? e.charCode : e.keyCode;
+      if (charCode < 48 || charCode > 57) {
+        e.preventDefault();
+      }
+    }
+
+    // ส่วนส่งข้อมูลแก้ไข
+    const form = document.querySelector("#editForm") as HTMLFormElement;
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(form);
+      const data = Object.fromEntries(formData.entries());
+
+      try {
+        const apiUrl = import.meta.env.PUBLIC_API_KEY;
+        const token = getCookie("auth_token");
+
+        if (!token) {
+          throw new Error("No JWT token found in cookies");
+        }
+
+        // ตรวจสอบการเข้าถึง id ที่ถูกต้อง
+        const decoded = jwtDecode<JwtPayload & { id: number }>(token);
+        const memberIdBase64 = btoa(decoded.id.toString());
+
+        const response = await axios.put(
+          `${apiUrl}/edit-user/${memberIdBase64}`,
+          data,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          Swal.fire({
+            position: "top-end",
+            icon: "success",
+            title: "Your work has been saved",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+        } else {
+          Swal.fire("Update failed");
+        }
+      } catch (error) {
+        console.error("Error updating member:", error);
+        Swal.fire("An error occurred while updating the member");
+      }
+    });
+  </script>  -->

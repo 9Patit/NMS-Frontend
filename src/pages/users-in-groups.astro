@@ -1,8 +1,8 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
-import Maincontent from "../../../layouts/Maincontent.astro";
-import ManageGroups from "../../../components/manage-groups.tsx";
-import { authenticate } from "../../../utils/auth";
+import Layout from "../layouts/Layout.astro";
+import LeaderTable from "../components/leader-table.astro";
+import Maincontent from "../layouts/Maincontent.astro";
+import { authenticate } from "../utils/auth";
 
 let userId: string, displayName: string, pictureUrl: string, role: string;
 
@@ -18,21 +18,19 @@ if (authResult.redirect) {
   displayName = authResult.displayName;
   pictureUrl = authResult.pictureUrl;
   role = authResult.role;
-
-  // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
-  if (role !== 'hr' && role !== 'super-admin') {
+  
+  // ตรวจสอบว่า role เป็น leader หรือไม่
+  if (role !== 'leader') {
     return Astro.redirect('/login'); // เปลี่ยนเส้นทางไปที่หน้าล็อกอินหรือหน้าอื่นที่เหมาะสม
   }
 }
-
-const { id } = Astro.params;
 ---
 
-<Layout title="Manage Group" displayName={displayName} pictureUrl={pictureUrl} role={role}/>
+<>
 
-<Maincontent title="จัดการกลุ่มของสมาชิก"> 
-  <ManageGroups id={id} client:load />
+<Layout title="Data table" displayName={displayName} pictureUrl={pictureUrl} role={role}/>
 
+<Maincontent title="จัดการสมาชิก">    
+    <LeaderTable />
 </Maincontent>
-
-
+</>

@@ -1,9 +1,16 @@
 ---
-interface Props {
-  title: string;
+// Import และกำหนด Props ตามที่คุณระบุไว้
+import React, { type ReactNode } from 'react';
+
+export interface Props {
+  title: string; 
+  role: string;
+  displayName: string;
+  pictureUrl: string;
+  children?: React.ReactNode;
 }
 
-const { title } = Astro.props;
+const { title, displayName, pictureUrl, role } = Astro.props;
 ---
 
 <!doctype html>
@@ -11,30 +18,28 @@ const { title } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <title>{title}</title>
-    <meta
-      http-equiv="Cache-Control"
-      content="no-cache, no-store, must-revalidate"
-    />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <link rel="shortcut icon" href="/assets/images/favicon.ico" />
-    <link
-      href="/assets/css/bootstrap.min.css"
-      rel="stylesheet"
-      type="text/css"
-    />
+    <link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
-    <link href="/assets/css/theme.min.css" rel="stylesheet" type="text/css" />
+    <link href="/assets/css/theme.min.css" rel="stylesheet" type="text/css" />    
+    <link rel="stylesheet" href="/assets/css/customTheme.css">
+    
+    
   </head>
 
-  <body>
+  <body> 
     <div id="layout-wrapper">
-      <header id="page-topbar">
+      <header id="page-topbar">        
         <div class="navbar-header">
+          <button type="button" class="btn btn-sm mr-2 d-lg-none px-3 font-size-16 header-item waves-effect waves-light" id="vertical-menu-btn">
+            <i class="fa fa-fw fa-bars"></i>
+          </button>
           <div class="navbar-brand-box d-flex align-items-left">
-            <a href="/" class="logo">
-              <i class="mdi mdi-album"></i>
-              <span> Notice Me Senpai </span>
+            <a href="/" class="logo">              
+              <span> N.M.S </span>
             </a>
           </div>
 
@@ -48,36 +53,12 @@ const { title } = Astro.props;
                 aria-haspopup="true"
                 aria-expanded="false"
               >
-                <img
-                  class="rounded-circle header-profile-user"
-                  src="/assets/images/users/avatar-3.jpg"
-                  alt="Header Avatar"
-                />
-                <span class="d-none d-sm-inline-block ml-1">Madhly</span>
+                <img class="rounded-circle header-profile-user" src={pictureUrl} alt="Header Avatar" />
+                <span class="d-none d-sm-inline-block ml-1">{role}</span>
+                <span class="d-none d-sm-inline-block ml-1">{displayName}</span>
                 <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
               </button>
               <div class="dropdown-menu dropdown-menu-right">
-                <a
-                  class="dropdown-item d-flex align-items-center justify-content-between"
-                  href="javascript:void(0)"
-                >
-                </a>
-                <a
-                  class="dropdown-item d-flex align-items-center justify-content-between"
-                  href="javascript:void(0)"
-                >
-                  <span>Profile</span>
-                  <span>
-                    <span class="badge badge-pill badge-warning">1</span>
-                  </span>
-                </a>
-                <a
-                  class="dropdown-item d-flex align-items-center justify-content-between"
-                  href="javascript:void(0)"
-                >
-                  Settings
-                </a>
-
                 <a
                   class="dropdown-item d-flex align-items-center justify-content-between"
                   href="/logout"
@@ -94,44 +75,46 @@ const { title } = Astro.props;
         <div data-simplebar class="h-100">
           <div id="sidebar-menu">
             <ul class="metismenu list-unstyled" id="side-menu">
-              <li class="menu-title">Menu</li>
-              <li>
-                <a href="/filepond" class="waves-effect"
-                  ><i class="feather-calendar"></i><span>FilePond</span></a
-                >
-              </li>
-              <li>
-                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                  <i class="mdi mdi-share-variant"></i><span>Multi Level</span>
-                </a>
-                <ul class="sub-menu" aria-expanded="true">
-                  <li><a href="javascript: void(0);">Level 1.1</a></li>
-                  <li>
-                    <a href="javascript: void(0);" class="has-arrow"
-                      >Level 1.2</a
-                    >
-                    <ul class="sub-menu" aria-expanded="true">
-                      <li><a href="javascript: void(0);">Level 2.1</a></li>
-                      <li><a href="javascript: void(0);">Level 2.2</a></li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
+              <li class="menu-title">เมนู</li>
 
-              <li>
-                <a href="javascript: void(0);" class="has-arrow waves-effect"
-                  ><i class="feather-list"></i><span>Tables</span></a
-                >
-                <ul class="sub-menu" aria-expanded="false">
-                  <li>
-                    <a href="/tables">DATA Tables</a>
-                  </li>
-                </ul>
-              </li>
+              
+              {/* เมนูสำหรับ role user */}
+              {role === 'user' && (
+                <li>
+                  <a href="/edit-profile"><i class="feather-edit"></i><span>แก้ไข Profile</span></a>                
+                </li>
+              )}
+              
+              {/* เมนูสำหรับ role leader */}
+              {role === 'leader' && (
+                <li>
+                  <a href="/users-in-groups"><i class="feather-user-check"></i><span>จัดการสมาชิก</span></a>                
+                </li>
+              )}
+
+              {/* เมนูสำหรับ role hr หรือ super-admin */}
+              {(role === 'hr' || role === 'super-admin') && (
+                <li>
+                  <a href="/tables"><i class="feather-users"></i><span>จัดการสมาชิก</span></a>                
+                </li>
+              )}
             </ul>
           </div>
         </div>
       </div>
+
+      <footer class="footer">
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-6">2024 © WEISE TECHNIKA</div>
+            <div class="col-sm-6">
+              <div class="text-sm-right d-none d-sm-block">
+                Develop by WEISE TECHNIKA
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       <div class="menu-overlay"></div>
 
@@ -143,9 +126,41 @@ const { title } = Astro.props;
       <script src="/plugins/jquery-sparkline/jquery.sparkline.min.js" is:inline></script>
       <script src="/plugins/jquery-knob/jquery.knob.min.js" is:inline></script>
       <script src="/plugins/morris-js/morris.min.js" is:inline></script>
-      <script src="/plugins/raphael/raphael.min.js" is:inline></script>
       <script src="/assets/js/theme.js" is:inline></script>
+    </div> 
 
-    </div>
+    <style is:global>
+      
+      @media (max-width: 992px) {
+        .logo span {
+          display: flex; 
+        }
+      }
+    
+      @font-face { 
+        font-family: 'Sarabun';
+        src: url('/fonts/Sarabun.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Kanit';
+        src: url('/fonts/Kanit.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      body {
+        font-family: 'Sarabun', sans-serif !important;          
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Kanit', sans-serif !important;         
+      }
+      .menu-title {
+        font-size: 16px !important;
+        font-weight: 600 !important;       
+      }
+    </style>
   </body>
 </html>

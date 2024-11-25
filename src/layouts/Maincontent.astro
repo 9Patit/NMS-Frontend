@@ -1,14 +1,17 @@
 ---
+import { type ReactNode } from 'react';
+
 interface Props {
+  children: ReactNode;
   title: string;
 }
-
 const { title } = Astro.props;
 --- 
 
 <html>
   <head>
     <meta charset="UTF-8" />
+    <link href="/assets/css/customTheme.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
     <div class="main-content">
@@ -34,32 +37,10 @@ const { title } = Astro.props;
             </div>
           </div>
           <!-- end page title -->
-
-          <div class="row">
-            <div class="col-12">
-              <div class="card">
-                <div class="card-body">
-                  <slot />
-                </div>
-              </div>
-            </div>
-          </div>
+          <slot />
         </div>
       </div>
-      
-
-      <footer class="footer">
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-sm-6">2024 © WEISE TECHNIKA</div>
-            <div class="col-sm-6">
-              <div class="text-sm-right d-none d-sm-block">
-                Develop by WEISE TECHNIKA
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   </body>
 </html>
+

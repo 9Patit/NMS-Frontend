@@ -1,7 +1,10 @@
----
+<!-- ---
 import Layout from "../layouts/Layout.astro";
 import Fileponds from "../components/filepond.tsx";
 import Maincontent from "../layouts/Maincontent.astro";
+
+
+
 const authToken = Astro.cookies.get('auth_token');
 
 if (!authToken) { return Astro.redirect('/login');}
@@ -11,5 +14,5 @@ if (!authToken) { return Astro.redirect('/login');}
 <Maincontent title="Filepond">
   <Fileponds client:load />
 </Maincontent>
-
-<Layout title="NMS Upload !!"/>
+</Layout>
+<Layout title="NMS Upload !!" role="admin" displayName="User Name" pictureUrl="/path/to/picture.jpg"> -->

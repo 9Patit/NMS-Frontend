@@ -2,29 +2,49 @@
 import axios from "axios";
 import Layout from "../../layouts/Layout.astro";
 import Maincontent from "../../layouts/Maincontent.astro";
+import { authenticate } from "../../utils/auth";
+// import '../../../public/assets/css/customTheme.css';
 
 const apiUrl = import.meta.env.PUBLIC_API_KEY;
+let userId: string, displayName: string, pictureUrl: string, role: string;
 
+const req = Astro.request;
 
-export async function getStaticPaths() {
-  const response = await axios.get(`${apiUrl}/tables`);
-  const users = response.data;
-  return {
-    paths: users.map((user) => ({
-      params: { id: Buffer.from(user.id.toString()).toString("base64") },
-    })),
-    fallback: false,
-  };
+const authResult = await authenticate(req);
+if (authResult.redirect) {
+  // ถ้าต้องการเปลี่ยนเส้นทาง ให้เปลี่ยนเส้นทางไปที่หน้าล็อกอิน
+  return Astro.redirect(authResult.redirect);
+} else {
+  // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
+  userId = authResult.userId;
+  displayName = authResult.displayName;
+  pictureUrl = authResult.pictureUrl;
+  role = authResult.role;
+
+  // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
+  if (role !== "hr" && role !== "super-admin") {
+    return Astro.redirect("/login"); // เปลี่ยนเส้นทางไปที่หน้าล็อกอินหรือหน้าอื่นที่เหมาะสม
+  }
 }
 
 const { id } = Astro.params;
 
 const fetchData = async () => {
+  // ดึง JWT token จากคุกกี้ในฝั่งเซิร์ฟเวอร์
+  const getToken = Astro.cookies.get("auth_token");
+  const token = getToken.value;
+  if (!token) throw new Error("JWT token not found in cookies");
+
   try {
-    const response = await axios.get(`${apiUrl}/tables/${id}`);
+    const response = await axios.get(`${apiUrl}/tables/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
     return response.data;
   } catch (error) {
-    console.error("Failed to fetch data:", error);
+    console.error("Failed to fetch data:");
     return null;
   }
 };
@@ -37,6 +57,19 @@ function formatDate(dateString) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
   return `${day}-${month}-${year}`;
+}
+
+function calculateDaysRemaining(expiresAt: string) {
+  const currentDate = new Date();
+  const expirationDate = new Date(expiresAt);
+
+  if (isNaN(expirationDate.getTime())) {
+    console.error("Invalid expiration date:", expiresAt);
+    return NaN;
+  }
+
+  const timeDifference = expirationDate.getTime() - currentDate.getTime();
+  return Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
 }
 
 async function checkImage(url) {
@@ -54,152 +87,289 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
   : defaultImageUrl;
 ---
 
-<Layout title="User Profile" client:load />
+<Layout
+  title="User Profile"
+  displayName={displayName}
+  pictureUrl={pictureUrl}
+  role={role}
+/>
 
 {
   userData ? (
-    <Maincontent title="User Profile">
-      <div class="name-edit">
-        <h2>
-          {userData.first_name}
-          {userData.last_name}
-          {`(${userData.nickname})`}
-        </h2>
-        <a href="#" class="btn btn-primary btn-sm" id="edit-button">
-          แก้ไขข้อมูล
-        </a>
-        <span class="close-button">&times;</span>
-      </div>
+    <Maincontent title="จัดการสมาชิก">
+      <div class="profile-card">
+        <div class="div-back-btn">
+          <span class="back-btn">&times;</span>
+        </div>
 
-      <div class="profile-container">
-        <img
-          src={profileImageUrl}
-          alt="Profile Picture"
-          class="profile-picture"
-        />
+        <div class="profile-image">
+          <img
+            src={profileImageUrl}
+            alt="Profile Picture"
+            class="profile-picture rounded-circle"
+          />
+        </div>
 
-        <div class="profile-details">
-          <p>โทรศัพท์: {userData.tel}</p>
-          <p>Email: {userData.email}</p>
-          <p>Role: {userData.status}</p>
-          <p>Status: {userData.verify}</p>
-          <p>วันที่สมัคร: {formatDate(userData.datetime)}</p>
+        <div class="profile-info">
+          <div class="profile-name">
+            {userData.first_name} {userData.last_name}
+          </div>
+          <div class="profile-nickname">{`(${userData.nickname})`}</div>
+
+          <div class="profile-badges">
+            <span class="badge badge-role">{userData.status}</span>
+            <span class="badge badge-status">{userData.verify}</span>
+          </div>
+
+          <div class="profile-details">
+            <div class="detail-item">
+              <i class="mdi mdi-tablet-android" />
+              <span>{userData.tel}</span>
+            </div>
+            <div class="detail-item">
+              <i class="mdi mdi-email" />
+              <span>{userData.email}</span>
+            </div>
+            <div class="detail-item">
+              <i class="mdi mdi-calendar-month" />
+              <span>{formatDate(userData.datetime)}</span>
+            </div>
+            <div class="btn outline-secondary waves-effect waves-light ">
+              <div class="display-title-group">
+                <i class="mdi mdi-account-group gap" />
+                <span>กลุ่มที่สังกัด:</span>
+              </div>
+
+              <ul class="group-list">
+                {userData.groups.length > 0 ? (
+                  userData.groups.map((group) => <li>{group}</li>)
+                ) : (
+                  <li>ไม่มีกลุ่ม</li>
+                )}
+              </ul>
+            </div>
+            <div class="btn outline-secondary waves-effect waves-light">
+              <div class="display-title-group">
+                <i class="mdi mdi-account-star gap" />
+                <span>กลุ่มที่เป็นLeader:</span>
+              </div>
+
+              <ul class="group-list">
+                {userData.leaderGroups && userData.leaderGroups.length > 0 ? (
+                  userData.leaderGroups.map((group) => <li>{group}</li>)
+                ) : (
+                  <li>ไม่มีกลุ่มที่เป็นLeader</li>
+                )}
+              </ul>
+            </div>
+            <div class="button-container">
+              <a href="#" class="btn btn-primary btn-sm" id="edit-button">
+                แก้ไขข้อมูล
+              </a>
+              <a href="#" class="btn btn-primary btn-sm" id="token-button">
+                จัดการToken
+              </a>
+              <a href="#" id="manage-group-link" class="btn btn-primary btn-sm">
+                จัดการกลุ่ม
+              </a>
+              <a
+                href="#"
+                id="manage-leader-group-link"
+                class="btn btn-primary btn-sm"
+              >
+                จัดการLeader
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div>
-        <h3>
-          กลุ่มที่สังกัด{" "}
-          <a href="#" id="manage-group-link" class="btn btn-primary btn-sm">
-            จัดการกลุ่ม
-          </a>
-        </h3>
-        <ul class="group-list">
-          {userData.groups.length > 0 ? (
-            userData.groups.map((group) => <li>{group}</li>)
-          ) : (
-            <li>ไม่มีกลุ่ม</li>
-          )}
-        </ul>
+      {/* ====================================================================== */}
 
-        <h3>
-          Leaderกลุ่ม{" "}
-          <a
-            href="#"
-            id="manage-leader-group-link"
-            class="btn btn-primary btn-sm"
-          >
-            จัดการกลุ่มที่เป็นLeader
-          </a>
-        </h3>
-        <ul class="group-list">
-          {userData.leaderGroups && userData.leaderGroups.length > 0 ? (
-            userData.leaderGroups.map((group) => <li>{group}</li>)
+      <div id="token-modal" class="modal">
+        <div class="modal-content">
+          <div class="title-card">
+            <div>
+              <h4>
+                จัดการ Token ของ {userData?.first_name} {userData?.last_name}{" "}
+              </h4>
+            </div>
+            <div class="div-back-btn">
+              <button class="token-back-btn back-btn">&times;</button>
+            </div>
+          </div>
+          {/* ตรวจสอบว่ามี token อยู่  */}
+          {userData.tokens && userData.tokens.length > 0 ? (
+            userData.tokens.map((token) => (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                    marginBottom: "10px",
+                    borderRadius: "5px",
+                    width: "100%",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <strong>Token ID:</strong> {token.id}
+                    <strong style={{ marginLeft: "10px" }}>
+                      สร้างเมื่อ:
+                    </strong>{" "}
+                    {new Date(token.createdAt).toLocaleString()}
+                    <strong style={{ marginLeft: "10px" }}>
+                      หมดอายุในอีก {calculateDaysRemaining(token.expiresAt)} วัน
+                    </strong>
+                  </div>
+                  <button
+                    class="btn btn-primary btn-sm"
+                    id="delete-token-button"
+                    data-id={id}
+                    data-token-id={token.id}
+                  >
+                    ลบ Token
+                  </button>
+                </div>
+              </>
+            ))
           ) : (
-            <li>ไม่มีกลุ่มที่เป็นLeader</li>
+            <p>ไม่พบข้อมูล Token</p>
           )}
-        </ul>
+        </div>
       </div>
 
+      {/* ====================================================================== */}
+
       <div id="edit-modal" class="modal">
-        <div class="modal-content">
-          <h2>แก้ไขข้อมูลส่วนตัว</h2>
-          <form action="/action_page.php">
-            <div class="form-group">
-              <label for="fname">First name:</label>
-              <input
-                type="text"
-                id="fname"
-                name="first_name"
-                value={userData.first_name}
-              />
-            </div>
-            <div class="form-group">
-              <label for="lname">Last name:</label>
-              <input
-                type="text"
-                id="lname"
-                name="last_name"
-                value={userData.last_name}
-              />
-            </div>
-            <div class="form-group">
-              <label for="nickname">Nickname:</label>
-              <input
-                type="text"
-                id="nickname"
-                name="nickname"
-                value={userData.nickname}
-              />
-            </div>
-            <div class="form-group">
-              <label for="tel">Tel:</label>
-              <input type="text" id="tel" name="tel" value={userData.tel} />
-            </div>
-            <div class="form-group">
-              <label for="email">Email:</label>
-              <input
-                type="text"
-                id="email"
-                name="email"
-                value={userData.email}
-              />
-            </div>
-            <div class="form-group " style="display: flex;">
-              <label for="status">Role:</label>
-              <select id="status" name="status">
-                <option value="user" selected={userData.status === "user"}>
-                  User
-                </option>
-                <option value="admin" selected={userData.status === "admin"}>
-                  Admin
-                </option>
-                <option value="d2s" selected={userData.status === "d2s"}>
-                  D2S
-                </option>
-                <option value="leader" selected={userData.status === "leader"}>
-                  Leader
-                </option>
-              </select>
-              <label for="verify">Status:</label>
-              <select id="verify" name="verify">
-                <option value="ใช้งาน" selected={userData.verify === "1"}>
-                  ใช้งาน
-                </option>
-                <option value="ออก" selected={userData.verify === "0"}>
-                  ยังไม่อนุมัติ
-                </option>
-                <option
-                  value="ยังไม่อนุมัติ"
-                  selected={userData.verify === "10"}
-                >
-                  ออก
-                </option>
-              </select>
-            </div>
-            <div class="form-group"></div>
-            <input type="submit" value="Submit" class="btn btn-primary" />
-          </form>
+        <div class="profile-card modal-content">
+          <div class="profile-image">
+            <img
+              src={profileImageUrl}
+              alt="Profile Picture"
+              class="profile-picture rounded-circle"
+            />
+          </div>
+
+          <div class="profile-info">
+            <form>
+              <div class="edit-profile-name form-group ">
+                <input
+                  class="form-control "
+                  type="text"
+                  id="fname"
+                  name="first_name"
+                  value={userData.first_name}
+                  placeholder="ชื่อ"
+                />
+                <input
+                  class="form-control "
+                  type="text"
+                  id="lname"
+                  name="last_name"
+                  placeholder="นามสกุล"
+                  value={userData.last_name}
+                />
+              </div>
+              <div class=" form-group  ">
+                <input
+                  class="form-control"
+                  type="text"
+                  id="nickname"
+                  name="nickname"
+                  placeholder="ชื่อเล่น"
+                  value={userData.nickname}
+                />
+              </div>
+
+              <div class="edit-select">
+                {role === "super-admin" && (
+                  <>
+                    <select id="status" name="status" class="custom-select">
+                      <option
+                        value="super-admin"
+                        selected={userData.status === "super-admin"}
+                      >
+                        ผู้ดูแลระบบ
+                      </option>
+                      <option
+                        value="user"
+                        selected={userData.status === "user"}
+                      >
+                        ที่ปรึกษาฝ่ายขาย
+                      </option>
+                      <option
+                        value="admin"
+                        selected={userData.status === "admin"}
+                      >
+                        ผู้ตรวจเอกสาร(TBR)
+                      </option>
+                      <option value="crl" selected={userData.status === "crl"}>
+                        ลูกค้าสัมพันธ์
+                      </option>
+                      <option value="d2s" selected={userData.status === "d2s"}>
+                        ฝ่ายการตลาด(D2S)
+                      </option>
+                      <option
+                        value="leader"
+                        selected={userData.status === "leader"}
+                      >
+                        ผู้จัดการทีมขาย
+                      </option>
+                      <option value="hr" selected={userData.status === "hr"}>
+                        ฝ่ายบุคคล
+                      </option>
+                    </select>
+                  </>
+                )}
+
+                <select id="verify" name="verify" class="custom-select ">
+                  <option value="ใช้งาน" selected={userData.verify === "1"}>
+                    ใช้งาน
+                  </option>
+                  <option value="ออก" selected={userData.verify === "0"}>
+                    ยังไม่อนุมัติ
+                  </option>
+                  <option
+                    value="ยังไม่อนุมัติ"
+                    selected={userData.verify === "10"}
+                  >
+                    ออก
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <input
+                  class="form-control "
+                  type="text"
+                  id="tel"
+                  name="tel"
+                  placeholder="หมายเลขโทรศัพท์"
+                  value={userData.tel}
+                />
+              </div>
+              <div class="form-group">
+                <input
+                  class="form-control"
+                  type="text"
+                  id="email"
+                  name="email"
+                  placeholder="ที่อยู่ Email"
+                  value={userData.email}
+                />
+              </div>
+
+              {role === "super-admin" && (
+                <input type="submit" value="ยืนยัน" class="btn btn-primary" />
+              )}
+              {role === "hr" && (
+                <input type="submit" value="Submit" class="btn btn-secondary" />
+              )}
+            </form>
+          </div>
         </div>
       </div>
     </Maincontent>
@@ -224,11 +394,6 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
     align-items: flex-start;
   }
 
-  .profile-details {
-    width: 40%;
-    flex: 1;
-    margin-left: 5%;
-  }
   .profile-picture {
     margin-left: 20px;
     max-width: 150px;
@@ -244,38 +409,34 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
     transform: scale(1.05);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
   }
-  .group-list {
-    display: flex;
-    flex-wrap: wrap;
-    list-style-type: none;
-    padding: 0;
-  }
-  .group-list li {
-    margin-right: 10px;
-  }
-
+  
   .modal {
     display: none;
     position: fixed;
-    z-index: 1;
+    z-index: 1050;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgb(0, 0, 0);
     background-color: rgba(0, 0, 0, 0.4);
+    align-items: center;
+    justify-content: center;
   }
+
   .modal-content {
     position: relative;
     background-color: #fefefe;
-    margin: 15% auto;
     padding: 20px;
     border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
+    width: 90%;
+    max-width: 800px;
     border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    margin: auto;
+    transform: translateY(90px);
   }
+
   .close-button {
     position: absolute;
     right: 25px;
@@ -294,12 +455,17 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
     margin-bottom: 15px;
   }
   .form-group label {
+    position: relative;
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
   }
   .form-group input {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     box-sizing: border-box;
   }
   .btn-primary {
@@ -312,50 +478,293 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
   .btn-primary:hover {
     background-color: #0056b3;
   }
+
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #1f2937;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-group input:hover,
+  .form-group select:hover {
+    border-color: #9ca3af;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .form-group input::placeholder {
+    color: #9ca3af;
+  }
+
+  /* สไตล์สำหรับอินพุตที่ถูกปิดการใช้งาน */
+  .form-group input:disabled,
+  .form-group select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  /* สไตล์สำหรับ select */
+  .form-group select {
+    appearance: none;
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+
+  /* สถานะผิดพลาด */
+  .form-group.error input,
+  .form-group.error select {
+    border-color: #ef4444;
+  }
+
+  .form-group.error input:focus,
+  .form-group.error select:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+  }
+
+  /* สถานะสำเร็จ */
+  .form-group.success input,
+  .form-group.success select {
+    border-color: #10b981;
+  }
+
+  .form-group.success input:focus,
+  .form-group.success select:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  }
+
+  /* การปรับแต่งสำหรับมือถือ */
+  @media (max-width: 640px) {
+    .form-group input,
+    .form-group select {
+      font-size: 1rem;
+      padding: 0.625rem 0.875rem;
+    }
+  }
+  .form-group {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* ระยะห่างระหว่าง label กับ input */
+    margin-bottom: 15px;
+  }
+
+  .form-group label {
+    margin-bottom: 0;
+    width: 100px; /* กำหนดขนาดของ label ตามที่ต้องการ */
+    text-align: right; /* จัดตำแหน่งข้อความของ label */
+  }
+
+  .form-group input {
+    flex: 1;
+    padding: 8px;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* ======================= */
+  .profile-card {
+    position: relative;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+  .close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .close-button:hover,
+  .close-button:focus {
+    color: black;
+    text-decoration: none;
+  }
+  .profile-image {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .profile-image img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 4px solid #f0f2f5;
+    object-fit: cover;
+  }
+  .profile-info {
+    text-align: center;
+  }
+
+  .profile-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-nickname {
+    color: #666;
+    margin-bottom: 1rem;
+  }
+
+  .profile-badges {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    color: white;
+  }
+
+  .badge-status {
+    background-color: #22c55e;
+  }
+
+  .badge-role {
+    background-color: #3b82f6;
+  }
+
+  .profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    flex: 1;
+  }
+
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4b5563;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8fafc;
+  }
+
+  .detail-item i {
+    width: 20px;
+    text-align: center;
+  }
+
+  .group-list {
+    display: flex;
+    flex-wrap: wrap;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+
+  .group-list li {
+    margin-right: 10px;
+    justify-content: flex-start;
+  }
+
+  .btn-outline-secondary {
+    font-size: 0.875rem;
+    color: #4b5563;
+    align-items: start;
+    justify-content: flex-start; /* จัดตำแหน่งองค์ประกอบภายในให้ชิดซ้าย */
+    gap: 5px;
+  }
+
+  .btn-outline-secondary div {
+    display: flex;
+  }
+
+  .btn-outline-secondary i {
+    margin-right: 10px;
+  }
+
+  @media (max-width: 480px) {
+    .profile-card {
+      margin: 1rem;
+      padding: 1.5rem;
+    }
+  }
+  .button-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .button-container .btn {
+    flex: 1;
+    text-align: center;
+  }
+  .edit-profile-name {
+    display: flex;
+    gap: 10px;
+  }
+  .edit-profile-name input {
+    flex: 1;
+  }
 </style>
 
 <script>
-  const frontEnd = import.meta.env.PUBLIC_FRONTEND_UrL;
   import axios from "axios";
+  import deleteTokenApi from "../../components/delete-token";
+  import Swal from "sweetalert2";
 
   document.addEventListener("DOMContentLoaded", () => {
     const editButton = document.getElementById("edit-button");
-    const modal = document.getElementById("edit-modal");
-    const closeButton = document.querySelector(".close-button");
-
-    editButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      modal.style.display = "block";
-    });
-
-    closeButton.addEventListener("click", () => {
-      window.location.href = `${frontEnd}/tables`;
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target == modal) {
-        modal.style.display = "none";
-      }
-    });
-
+    const tokenButton = document.getElementById("token-button");
     const manageGroupLink = document.getElementById("manage-group-link");
-    manageGroupLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      const currentUrl = window.location.href;
-      const base64Id = currentUrl.split("/").pop();
-      window.location.href = `/tables/manage-group/${base64Id}`;
-    });
-
     const manageGroupLeaderLink = document.getElementById(
       "manage-leader-group-link"
     );
-    manageGroupLeaderLink.addEventListener("click", (event) => {
-      event.preventDefault();
-      const currentUrl = window.location.href;
-      const base64Id = currentUrl.split("/").pop();
-      window.location.href = `/tables/manage-groupleader/${base64Id}`;
-    });
+    const tokenModal = document.getElementById("token-modal");
+    const modal = document.getElementById("edit-modal");
+    const closeButton = document.querySelector(".back-btn");
+    const tokenBackBtn = document.querySelector(".token-back-btn");
+    const frontEnd = import.meta.env.PUBLIC_FRONTEND_UrL;
 
+    // ฟังก์ชันสำหรับดึงค่า cookie
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(";").shift();
+    }
+
+    // เปิด modal สำหรับปุ่ม แก้ไขข้อมูล
+    if (editButton) {
+      editButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (modal) {
+          modal.style.display = "block";
+        }
+      });
+    }
+    // ส่งข้อมูลที่แก้ไขใน แก้ไขข้อมูล
     const form = document.querySelector("form");
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -365,22 +774,106 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
 
       const currentUrl = window.location.href;
       const base64Id = currentUrl.split("/").pop();
+      const apiUrl = import.meta.env.PUBLIC_API_KEY;
 
-      try { 
-        const apiUrl = import.meta.env.PUBLIC_API_KEY;
-        const response = await axios.put(
-          `${apiUrl}/tables/${base64Id}`,
-          data
-        );
+      try {
+        const token = getCookie("auth_token");
+        if (!token) throw new Error("No JWT token found in cookies");
+
+        // ตรวจสอบว่าปุ่มไหนถูกคลิก
+        const targetApi = event.submitter.classList.contains("btn-primary")
+          ? `${apiUrl}/superadmin-update/${base64Id}`
+          : `${apiUrl}/hr-update/${base64Id}`;
+
+        const response = await axios.put(targetApi, data, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
         if (response.status === 200) {
-          modal.style.display = "none";
-          window.location.reload();
+          modal.style.display = "none"; // ปิด modal หลังจากอัปเดตสำเร็จ
+          Swal.fire({
+            position: "center",
+            icon: "success",
+            title: "การแก้ไขข้อมูลสำเร็จ",
+            showConfirmButton: false,
+            timer: 800,
+          }).then(() => {
+            window.location.reload(); // รีโหลดหน้าเว็บ
+          });
         } else {
-          alert("Update failed");
+          Swal.fire("Update failed");
         }
       } catch (error) {
-        console.error("Error updating member:", error);
-        alert("An error occurred while updating the member");
+        console.error("Error updating member:", error); // แสดง error ใน console
+        Swal.fire("An error occurred while updating the member"); // แจ้งเตือนว่าเกิดข้อผิดพลาด
+      }
+    });
+
+    // เปิด modal สำหรับปุ่ม จัดการToken
+    if (tokenButton) {
+      tokenButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        if (tokenModal) {
+          tokenModal.style.display = "block";
+        }
+      });
+    }
+    // ลบ Token
+    document.querySelectorAll("#delete-token-button").forEach((button) => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+
+        const tokenId = button.getAttribute("data-token-id");
+        const id = button.getAttribute("data-id");
+
+        // ส่งค่า id และ tokenId ไปยัง API
+        await deleteTokenApi(id, tokenId);
+      });
+    });
+
+    // ไปหน้า จัดการกลุ่ม
+    if (manageGroupLink) {
+      manageGroupLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        const currentUrl = window.location.href;
+        const base64Id = currentUrl.split("/").pop();
+        window.location.href = `/tables/manage-group/${base64Id}`;
+      });
+    }
+
+    // ไปหน้า จัดการกลุ่ม Leader
+    if (manageGroupLeaderLink) {
+      manageGroupLeaderLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        const currentUrl = window.location.href;
+        const base64Id = currentUrl.split("/").pop();
+        window.location.href = `/tables/manage-groupleader/${base64Id}`;
+      });
+    }
+
+    // ปิด modal เมื่อคลิกปุ่มปิด
+    if (closeButton) {
+      closeButton.addEventListener("click", () => {
+        window.location.href = `${frontEnd}/tables`;
+      });
+    }
+
+    if (tokenBackBtn) {
+      tokenBackBtn.addEventListener("click", () => {
+        tokenModal.style.display = "none";
+      });
+    }
+
+    // ปิด modal เมื่อคลิกนอก modal
+    window.addEventListener("click", (event) => {
+      if (modal && event.target == modal) {
+        modal.style.display = "none";
+      }
+      if (tokenModal && event.target == tokenModal) {
+        tokenModal.style.display = "none";
       }
     });
   });

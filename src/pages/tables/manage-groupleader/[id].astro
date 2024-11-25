@@ -2,15 +2,36 @@
 import Layout from "../../../layouts/Layout.astro";
 import Maincontent from "../../../layouts/Maincontent.astro";
 import ManageGroupLeader from "../../../components/manage-groupleader";
-const authToken = Astro.cookies.get('auth_token');
+import { authenticate } from "../../../utils/auth";
 
-if (!authToken) { return Astro.redirect('/login');}
+let userId: string, displayName: string, pictureUrl: string, role: string;
+
+const req = Astro.request;
+
+const authResult = await authenticate(req); 
+if (authResult.redirect) {
+  // ถ้าต้องการเปลี่ยนเส้นทาง ให้เปลี่ยนเส้นทางไปที่หน้าล็อกอิน
+  return Astro.redirect(authResult.redirect);
+} else {
+  // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
+  userId = authResult.userId;
+  displayName = authResult.displayName;
+  pictureUrl = authResult.pictureUrl;
+  role = authResult.role;
+
+  // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
+  if (role !== 'hr' && role !== 'super-admin') {
+    return Astro.redirect('/login'); // เปลี่ยนเส้นทางไปที่หน้าล็อกอินหรือหน้าอื่นที่เหมาะสม
+  }
+}
 
 const { id } = Astro.params;
 ---
 
-<Maincontent title="Manage Group">
+<Layout title="Manage Groupleader"  displayName={displayName} pictureUrl={pictureUrl} role={role} />
+
+<Maincontent title="จัดการกลุ่มของผู้จัดการ">
   <ManageGroupLeader id={id} client:load/>
 </Maincontent>
 
-<Layout title="Manage Group" />
+

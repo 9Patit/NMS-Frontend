@@ -4,19 +4,19 @@ import Swal from "sweetalert2";
 
 axios.defaults.withCredentials = true;
 
-interface ManageGroupLeaderProps {
+interface ManageGroupProps {
   id: string;
 }
 
-const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
+const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
   const apiUrl = import.meta.env.PUBLIC_API_KEY;
   const frontEnd = import.meta.env.PUBLIC_FRONTEND_UrL;
 
   const [userData, setUserData] = useState<{
     first_name: string;
-    last_name: string;    
-    leaderGroups: string[];
-    nonLeaderGroups: string[];    
+    last_name: string;
+    groups: string[];
+    nonUserGroups: string[];
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,52 +42,16 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
     };
 
     fetchData();
-  }, [id]); 
-  
-  const handleUnleader = async (group: string) => {
-    try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth_token="))
-        ?.split("=")[1];     
-      await axios.post(
-        `${apiUrl}/tables/${id}/unleader`,
-        { group },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setUserData((prevState) => {
-        if (!prevState) return prevState;
-        return {
-          ...prevState,
-          leaderGroups: prevState.leaderGroups.filter((g) => g !== group),
-          nonLeaderGroups: [...prevState.nonLeaderGroups, group],
-        };
-      });
-      Swal.fire({
-        position: "center",
-        icon: "success",
-        title: "ยกเลิกสิทธิ์ผู้จัดการทีมขายสำเร็จ",
-        showConfirmButton: false,
-        timer: 800,
-      });
-    } catch (error) {
-      console.error("ยกเลิกสิทธิ์ผู้จัดการทีมขายไม่สำเร็จ:", error);
-    }
-  };
+  }, [id]);
 
-  
-
-  const handleGetLeader = async (group: string) => {
+  const handleLeaveGroup = async (group: string) => {
     try {
       const token = document.cookie
         .split("; ")
         .find((row) => row.startsWith("auth_token="))
         ?.split("=")[1];
-      
       await axios.post(
-        `${apiUrl}/tables/${id}/get-leader`,
+        `${apiUrl}/tables/${id}/leave`,
         { group },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -97,25 +61,58 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
         if (!prevState) return prevState;
         return {
           ...prevState,
-          leaderGroups: [...prevState.leaderGroups, group],
-          nonLeaderGroups: prevState.nonLeaderGroups.filter((g) => g !== group),
+          groups: prevState.groups.filter((g) => g !== group),
+          nonUserGroups: [...prevState.nonUserGroups, group],
         };
       });
       Swal.fire({
         position: "center",
         icon: "success",
-        title: "ให้สิทธิ์ผู้จัดการทีมขายสำเร็จ",
+        title: "ออกจากทีมขายสำเร็จ",
         showConfirmButton: false,
         timer: 800,
       });
     } catch (error) {
-      console.error("ให้สิทธิ์ผู้จัดการทีมขายไม่สำเร็จ:", error);
+      console.error("ออกจากทีมขายไม่สำเร็จ:", error);
+    }
+  };
+
+  const handleJoinGroup = async (group: string) => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth_token="))
+        ?.split("=")[1];
+
+      await axios.post(
+        `${apiUrl}/tables/${id}/join`,
+        { group },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setUserData((prevState) => {
+        if (!prevState) return prevState;
+        return {
+          ...prevState,
+          groups: [...prevState.groups, group],
+          nonUserGroups: prevState.nonUserGroups.filter((g) => g !== group),
+        };
+      });
+      Swal.fire({
+        position: "center",
+        icon: "success",
+        title: "เข้าร่วมทีมขายสำเร็จ",
+        showConfirmButton: false,
+        timer: 800,
+      });
+    } catch (error) {
+      console.error("เข้าร่วมทีมขายไม่สำเร็จ:", error);
     }
   };
 
   const handleGoBack = () => {
-    const baseUrl = `${frontEnd}/tables/${id}`;
-    window.location.href = `${baseUrl}`;
+    window.location.href = `${frontEnd}/tables/${id}`;
   };
 
   if (loading) return <p>Loading...</p>;
@@ -132,20 +129,21 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
         </div>
       </div>
 
+
       {userData && (
         <div className="display-groups">
           <div className="btn outline-secondary ">
-            <h4>เป็นผู้จัดการทีมขาย</h4>
+            <h4>กลุ่มที่สังกัด</h4>
             <ul className="group-list">
-              {userData.leaderGroups.length > 0 ? (
-                userData.leaderGroups.map((group, index) => (
+              {userData.groups.length > 0 ? (
+                userData.groups.map((group, index) => (
                   <li key={index} className="display-group-item btn outline-secondary ">
                     <div>
                     <span className="group-name">{group}</span>
                     </div>
                     <button
                       className="btn btn-primary btn-sm group-btn"
-                      onClick={() => handleUnleader(group)}
+                      onClick={() => handleLeaveGroup(group)}
                     >
                       ออก
                     </button>
@@ -158,17 +156,17 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
           </div>
 
           <div className="btn outline-secondary">
-            <h4>ไม่ได้เป็นผู้จัดการทีมขาย</h4>
+            <h4>กลุ่มที่ไม่ได้สังกัด</h4>
             <ul className="group-list">
-              {userData.nonLeaderGroups.length > 0 ? (
-                userData.nonLeaderGroups.map((group, index) => (
+              {userData.nonUserGroups.length > 0 ? (
+                userData.nonUserGroups.map((group, index) => (
                   <li key={index} className="display-group-item btn outline-secondary">
                     <div>
                     <span className="group-name">{group}</span>
                     </div>
                     <button
                       className="btn btn-primary btn-sm group-btn"
-                      onClick={() => handleGetLeader(group)}
+                      onClick={() => handleJoinGroup(group)}
                     >
                       เข้า
                     </button>
@@ -181,7 +179,7 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
           </div>
         </div>
       )}
-    </div>  
+    </div>
   );
 };
 
