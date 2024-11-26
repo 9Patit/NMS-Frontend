@@ -45,6 +45,19 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
   }, [id]); 
   
   const handleUnleader = async (group: string) => {
+    const confirmation = await Swal.fire({
+      title: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิกสิทธิ์ผู้จัดการทีมขาย?',
+      text: `กลุ่ม: ${group}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ยกเลิกเลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     try {
       const token = document.cookie
         .split("; ")
@@ -74,12 +87,24 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
       });
     } catch (error) {
       console.error("ยกเลิกสิทธิ์ผู้จัดการทีมขายไม่สำเร็จ:", error);
+      Swal.fire('เกิดข้อผิดพลาด', 'An error occurred while removing leader rights', 'error');
     }
   };
 
-  
-
   const handleGetLeader = async (group: string) => {
+    const confirmation = await Swal.fire({
+      title: 'คุณแน่ใจหรือไม่ว่าต้องการให้สิทธิ์ผู้จัดการทีมขาย?',
+      text: `กลุ่ม: ${group}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ให้สิทธิ์เลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     try {
       const token = document.cookie
         .split("; ")
@@ -110,6 +135,7 @@ const ManageGroup: React.FC<ManageGroupLeaderProps> = ({ id }) => {
       });
     } catch (error) {
       console.error("ให้สิทธิ์ผู้จัดการทีมขายไม่สำเร็จ:", error);
+      Swal.fire('เกิดข้อผิดพลาด', 'An error occurred while granting leader rights', 'error');
     }
   };
 
