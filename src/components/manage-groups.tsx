@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import getCookie from "../utils/getCookie";
 
 axios.defaults.withCredentials = true;
 
@@ -24,10 +25,7 @@ const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("auth_token="))
-          ?.split("=")[1];
+        const token = getCookie("auth_token");
 
         const response = await axios.get(`${apiUrl}/tables/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -45,11 +43,21 @@ const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
   }, [id]);
 
   const handleLeaveGroup = async (group: string) => {
+    const confirmation = await Swal.fire({
+      title: 'คุณแน่ใจหรือไม่ว่าต้องการออกจากกลุ่มนี้?',
+      text: `กลุ่ม: ${group}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, ออกเลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth_token="))
-        ?.split("=")[1];
+      const token = getCookie("auth_token");
       await axios.post(
         `${apiUrl}/tables/${id}/leave`,
         { group },
@@ -74,15 +82,26 @@ const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
       });
     } catch (error) {
       console.error("ออกจากทีมขายไม่สำเร็จ:", error);
+      Swal.fire('เกิดข้อผิดพลาด', 'An error occurred while leaving the group', 'error');
     }
   };
 
   const handleJoinGroup = async (group: string) => {
+    const confirmation = await Swal.fire({
+      title: 'คุณแน่ใจหรือไม่ว่าต้องการเข้าร่วมกลุ่มนี้?',
+      text: `กลุ่ม: ${group}`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'ใช่, เข้าร่วมเลย!',
+      cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmation.isConfirmed) {
+      return;
+    }
+
     try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth_token="))
-        ?.split("=")[1];
+      const token = getCookie("auth_token");
 
       await axios.post(
         `${apiUrl}/tables/${id}/join`,
@@ -108,6 +127,7 @@ const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
       });
     } catch (error) {
       console.error("เข้าร่วมทีมขายไม่สำเร็จ:", error);
+      Swal.fire('เกิดข้อผิดพลาด', 'An error occurred while joining the group', 'error');
     }
   };
 
@@ -128,7 +148,6 @@ const ManageGroup: React.FC<ManageGroupProps> = ({ id }) => {
           <button className="back-btn" onClick={handleGoBack}>&times;</button>
         </div>
       </div>
-
 
       {userData && (
         <div className="display-groups">
