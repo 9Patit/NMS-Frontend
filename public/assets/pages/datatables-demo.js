@@ -11,7 +11,8 @@ $(function () {
     serverSide: true,
     processing: true,
     searching: true,
-    paging: true,
+    paging: true,   
+    responsive: true,
     ajax: {
       url: "http://localhost:5000/users",
       type: "GET",
