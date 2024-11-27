@@ -1,16 +1,47 @@
 ---
-// Import และกำหนด Props ตามที่คุณระบุไว้
-import React, { type ReactNode } from 'react';
+import axios from 'axios';
 
-export interface Props {
-  title: string; 
-  role: string;
-  displayName: string;
-  pictureUrl: string;
-  children?: React.ReactNode;
+// Props interface
+interface Props {
+  title: string;
+  id: number; // ID รับเข้ามาเป็น string
 }
 
-const { title, displayName, pictureUrl, role } = Astro.props;
+// รับค่า Props จาก Astro
+const { title, id } = Astro.props;
+
+const apiUrl = import.meta.env.PUBLIC_API_KEY;
+
+// ฟังก์ชันสำหรับเรียก API
+const fetchProfile = async () => {
+  try {
+    // JWT Token (สมมติว่าได้จาก Cookie หรือกระบวนการอื่น)
+    const tokenObject = Astro.cookies.get('auth_token') || '';
+    const token = typeof tokenObject === 'object' && 'value' in tokenObject ? tokenObject.value : tokenObject;
+
+   
+    // เรียก API
+    const response = await axios.post(
+      `${apiUrl}/get-profile`,
+      { id: id },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    // คืนค่าผลลัพธ์
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return null;
+  }
+};
+
+// ดึงข้อมูลโปรไฟล์
+const profileData = await fetchProfile();
+
 ---
 
 <!doctype html>
@@ -25,8 +56,7 @@ const { title, displayName, pictureUrl, role } = Astro.props;
     <link href="/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
     <link href="/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <link href="/assets/css/theme.min.css" rel="stylesheet" type="text/css" />    
-    <link rel="stylesheet" href="/assets/css/customTheme.css">
-    
+    <link rel="stylesheet" href="/assets/css/customTheme.css">   
     
   </head>
 
@@ -53,9 +83,9 @@ const { title, displayName, pictureUrl, role } = Astro.props;
                 aria-haspopup="true"
                 aria-expanded="false"
               >
-                <img class="rounded-circle header-profile-user" src={pictureUrl} alt="Header Avatar" />
-                <span class="d-none d-sm-inline-block ml-1">{role}</span>
-                <span class="d-none d-sm-inline-block ml-1">{displayName}</span>
+                <img class="rounded-circle header-profile-user" src={profileData.line_usrphoto} alt="Header Avatar" />
+                <span class="d-none d-sm-inline-block ml-1">{profileData.status}</span>
+                <span class="d-none d-sm-inline-block ml-1">{profileData.first_name}</span>
                 <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
               </button>
               <div class="dropdown-menu dropdown-menu-right">
@@ -79,21 +109,21 @@ const { title, displayName, pictureUrl, role } = Astro.props;
 
               
               {/* เมนูสำหรับ role user */}
-              {role === 'user' && (
+              {profileData.status === 'user' && (
                 <li>
                   <a href="/edit-profile"><i class="feather-edit"></i><span>แก้ไข Profile</span></a>                
                 </li>
               )}
               
               {/* เมนูสำหรับ role leader */}
-              {role === 'leader' && (
+              {profileData.status === 'leader' && (
                 <li>
                   <a href="/users-in-groups"><i class="feather-user-check"></i><span>จัดการสมาชิก</span></a>                
                 </li>
               )}
 
               {/* เมนูสำหรับ role hr หรือ super-admin */}
-              {(role === 'hr' || role === 'super-admin') && (
+              {(profileData.status === 'hr' || profileData.status === 'super-admin') && (
                 <li>
                   <a href="/tables"><i class="feather-users"></i><span>จัดการสมาชิก</span></a>                
                 </li>
@@ -131,7 +161,7 @@ const { title, displayName, pictureUrl, role } = Astro.props;
 
     <style is:global>
       
-      @media (max-width: 992px) {
+      /* @media (max-width: 992px) {
         .logo span {
           display: flex; 
         }
@@ -156,7 +186,7 @@ const { title, displayName, pictureUrl, role } = Astro.props;
       }
       h1, h2, h3, h4, h5, h6 {
         font-family: 'Kanit', sans-serif !important;         
-      }
+      } */
       .menu-title {
         font-size: 16px !important;
         font-weight: 600 !important;       

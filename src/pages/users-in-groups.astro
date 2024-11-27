@@ -4,7 +4,7 @@ import LeaderTable from "../components/leader-table.astro";
 import Maincontent from "../layouts/Maincontent.astro";
 import { authenticate } from "../utils/auth";
 
-let userId: string, displayName: string, pictureUrl: string, role: string;
+let userId: number, displayName: string, pictureUrl: string, role: string;
 
 const req = Astro.request;
 
@@ -14,7 +14,7 @@ if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
 } else {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
-  userId = authResult.userId;
+  userId = authResult.id;
   displayName = authResult.displayName;
   pictureUrl = authResult.pictureUrl;
   role = authResult.role;
@@ -28,7 +28,7 @@ if (authResult.redirect) {
 
 <>
 
-<Layout title="Data table" displayName={displayName} pictureUrl={pictureUrl} role={role}/>
+<Layout title="Data table" id={userId} />
 
 <Maincontent title="จัดการสมาชิก">    
     <LeaderTable />

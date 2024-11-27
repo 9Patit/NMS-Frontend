@@ -465,5 +465,13 @@
 .gap {
   margin-right: 10px;
 }
+@import url('https://fonts.googleapis.com/css?family=Sarabun|Kanit&display=swap');
 
+body {
+  font-family: 'Sarabun', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Kanit', sans-serif !important;
+}
 

@@ -4,7 +4,7 @@ import Maincontent from "../../../layouts/Maincontent.astro";
 import ManageGroupLeader from "../../../components/manage-groupleader";
 import { authenticate } from "../../../utils/auth";
 
-let userId: string, displayName: string, pictureUrl: string, role: string;
+let userId: number, role: string;
 
 const req = Astro.request;
 
@@ -14,9 +14,7 @@ if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
 } else {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
-  userId = authResult.userId;
-  displayName = authResult.displayName;
-  pictureUrl = authResult.pictureUrl;
+  userId = authResult.id;  
   role = authResult.role;
 
   // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
@@ -28,7 +26,7 @@ if (authResult.redirect) {
 const { id } = Astro.params;
 ---
 
-<Layout title="Manage Groupleader"  displayName={displayName} pictureUrl={pictureUrl} role={role} />
+<Layout title="Manage Groupleader" id={userId} />
 
 <Maincontent title="จัดการกลุ่มของผู้จัดการ">
   <ManageGroupLeader id={id} client:load/>

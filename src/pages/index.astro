@@ -3,7 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Maincontent from "../layouts/Maincontent.astro";
 import { authenticate } from "../utils/auth";
 
-let userId: string, displayName: string, pictureUrl: string, role: string;
+let id: number, displayName: string, pictureUrl: string, role: string;
 
 const req = Astro.request;
 
@@ -12,16 +12,17 @@ if (authResult.redirect) {
   
   return Astro.redirect(authResult.redirect);
 } else {
-  // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
-  userId = authResult.userId;
-  displayName = authResult.displayName;
-  pictureUrl = authResult.pictureUrl;
-  role = authResult.role;
+  // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น 
+  id = authResult.id;
+ 
 }
 ---
+<!-- <head>
+  <link href="/assets/css/customTheme.css" rel="stylesheet" type="text/css" />
+</head> -->
 <>
-  <Layout title="Notice Me Senpai" displayName={displayName} pictureUrl={pictureUrl} role={role} />  
+  <Layout title="Notice Me Senpai" id={id} />  
   <Maincontent title="Notice Me Senpai">
     <h1 class="index-content">สวัสดีคุณ {displayName}</h1>
   </Maincontent>
-</>
+</> 

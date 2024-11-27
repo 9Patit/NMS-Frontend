@@ -6,7 +6,7 @@ import { authenticate } from "../../utils/auth";
 // import '../../../public/assets/css/customTheme.css';
 
 const apiUrl = import.meta.env.PUBLIC_API_KEY;
-let userId: string, displayName: string, pictureUrl: string, role: string;
+let userId: number, displayName: string, pictureUrl: string, role: string;
 
 const req = Astro.request;
 
@@ -16,10 +16,10 @@ if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
 } else {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
-  userId = authResult.userId;
-  displayName = authResult.displayName;
-  pictureUrl = authResult.pictureUrl;
+  userId = authResult.id;
   role = authResult.role;
+  
+ 
 
   // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
   if (role !== "hr" && role !== "super-admin") {
@@ -87,12 +87,7 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
   : defaultImageUrl;
 ---
 
-<Layout
-  title="User Profile"
-  displayName={displayName}
-  pictureUrl={pictureUrl}
-  role={role}
-/>
+<Layout title="User Profile" id={userId}/>
 
 {
   userData ? (

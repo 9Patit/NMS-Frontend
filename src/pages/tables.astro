@@ -4,7 +4,7 @@ import Datatables from "../components/data-tables.astro";
 import Maincontent from "../layouts/Maincontent.astro";
 import { authenticate } from "../utils/auth";
 
-let userId: string, displayName: string, pictureUrl: string, role: string;
+let id: number, role: string;
 
 const req = Astro.request;
 
@@ -14,11 +14,9 @@ if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
 } else {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
-  userId = authResult.userId;
-  displayName = authResult.displayName;
-  pictureUrl = authResult.pictureUrl 
-  role = authResult.role;
-  
+  id = authResult.id;  
+  role = authResult.role;  
+    
   // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
   if (role !== 'hr' && role !== 'super-admin') {
     return Astro.redirect('/login'); // เปลี่ยนเส้นทางไปที่หน้าล็อกอินหรือหน้าอื่นที่เหมาะสม
@@ -26,7 +24,7 @@ if (authResult.redirect) {
 }
 ---
 
-<Layout title="Data table" displayName={displayName} pictureUrl={pictureUrl} role={role}/>
+<Layout title="Data table" id={id} />
 
 <Maincontent title="จัดการสมาชิก">
     <Datatables />
