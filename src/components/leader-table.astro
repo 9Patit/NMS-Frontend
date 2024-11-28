@@ -1,7 +1,9 @@
 ---
 
 ---
-
+<head>
+  <link href="../plugins/datatables/responsive.bootstrap4.css" rel="stylesheet" type="text/css" />
+</head>
 <body>
   <div class="row">
     <div class="col-12">      
@@ -110,12 +112,12 @@
           <table id="leader-table" class="table dt-responsive nowrap" style="width:100%" >
             <thead>
               <tr>
-                <th>ชื่อ</th>
-                <th>นามสกุล</th>
-                <th>รายชื่อกลุ่มที่สังกัด</th>
-                <th>สิทธิ์เข้าใช้</th>
-                <th>สถานะ</th>
-                <th>ตัวเลือก</th>
+                <th style="white-space: nowrap;">ชื่อ</th>
+                <th style="white-space: nowrap;">นามสกุล</th>
+                <th style="white-space: nowrap;">กลุ่ม</th>
+                <th style="white-space: nowrap;">สิทธิ์เข้าถึง</th>
+                <th style="white-space: nowrap;">สถานะ</th>
+                <th style="white-space: nowrap;">ตัวเลือก</th>
               </tr>
             </thead>
             <tbody>
@@ -128,8 +130,6 @@
   </div>
 </body>
 
-<!-- SweetAlert2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script> 
 import { jwtDecode, type JwtPayload } from "jwt-decode";
@@ -166,7 +166,7 @@ if (token) {
       .then(response => response.json())
       .then(data => {
        
-
+        
         // อัปเดตค่า h2 ของแต่ละหมวดหมู่ด้วยข้อมูลจาก API response
         if (data.all !== undefined) {
           document.getElementById("all").textContent = data.all;
@@ -207,8 +207,9 @@ if (token) {
 <!-- <script src="/assets/js/jquery.sparkline.min.js" is:inline></script> 
 <script src="/assets/js/jquery.knob.min.js" is:inline></script> -->
 
-<!-- SweetAlert2 CSS -->
 
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" is:inline></script>
 
 <!-- third party js -->
 <script src="/plugins/datatables/jquery.dataTables.min.js" is:inline></script>

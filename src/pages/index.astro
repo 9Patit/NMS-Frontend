@@ -13,13 +13,12 @@ if (authResult.redirect) {
   return Astro.redirect(authResult.redirect);
 } else {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น 
+  displayName = authResult.displayName;
   id = authResult.id;
  
 }
 ---
-<!-- <head>
-  <link href="/assets/css/customTheme.css" rel="stylesheet" type="text/css" />
-</head> -->
+
 <>
   <Layout title="Notice Me Senpai" id={id} />  
   <Maincontent title="Notice Me Senpai">

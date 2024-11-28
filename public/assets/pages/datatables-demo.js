@@ -100,6 +100,7 @@ $(function () {
     processing: true,
     searching: true,
     paging: true,
+    responsive: true,
     ajax: {
       url: "http://localhost:5000/leader-get-users",
       type: "POST",
@@ -166,16 +167,46 @@ $(function () {
   });
 
   // Event listener สำหรับ dropdown
+  // $("#leader-table").on("click", ".change-status", function (e) {
+  //   e.preventDefault();
+
+  //   const userId = $(this).data("id"); // รับ id ของผู้ใช้
+  //   const newStatus = $(this).data("status"); // รับสถานะใหม่
+  //   function getCookie(name) {
+  //     const value = `; ${document.cookie}`;
+  //     const parts = value.split(`; ${name}=`);
+  //     if (parts.length === 2) return parts.pop().split(";").shift();
+  //   }
+
+  //   // เรียก API สำหรับอัปเดตสถานะ
+  //   $.ajax({
+  //     url: "http://localhost:5000/update-verify-status",
+  //     type: "PUT",
+  //     headers: {
+  //       Authorization: "Bearer " + getCookie("auth_token"),
+  //     },
+  //     contentType: "application/json",
+  //     data: JSON.stringify({ id: userId, verify: newStatus }),
+  //     success: function (response) {
+  //       alert("เปลี่ยนสถานะสำเร็จ"); // แสดงข้อความเมื่อสำเร็จ
+  //       location.reload();
+  //     },
+  //     error: function (xhr, status, error) {
+  //       console.error("Error:", error);
+  //       alert("ไม่สามารถอัปเดตสถานะได้");
+  //       location.reload();
+  //     },
+  //   });
+  // });
+
+  // Event listener สำหรับ dropdown
   $("#leader-table").on("click", ".change-status", function (e) {
     e.preventDefault();
 
     const userId = $(this).data("id"); // รับ id ของผู้ใช้
     const newStatus = $(this).data("status"); // รับสถานะใหม่
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(";").shift();
-    }
+
+    
 
     // เรียก API สำหรับอัปเดตสถานะ
     $.ajax({
@@ -187,14 +218,32 @@ $(function () {
       contentType: "application/json",
       data: JSON.stringify({ id: userId, verify: newStatus }),
       success: function (response) {
-        alert("เปลี่ยนสถานะสำเร็จ"); // แสดงข้อความเมื่อสำเร็จ
-        location.reload();
+        // ใช้ SweetAlert แสดงข้อความเมื่อสำเร็จ
+        Swal.fire({
+          title: 'สำเร็จ!',
+          text: 'เปลี่ยนสถานะเรียบร้อยแล้ว',
+          icon: 'success',
+          timer: 1000,
+          showConfirmButton: false  
+        }).then(() => {
+          location.reload();
+        });
       },
       error: function (xhr, status, error) {
-        console.error("Error:", error);
-        alert("ไม่สามารถอัปเดตสถานะได้");
-        location.reload();
+        // ใช้ SweetAlert แสดงข้อความเมื่อเกิดข้อผิดพลาด
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: 'ไม่สามารถอัปเดตสถานะได้',
+          confirmButtonText: 'ปิด'
+        }).then(() => {
+          location.reload();
+        });
       },
     });
   });
+
+
+ 
+
 });
