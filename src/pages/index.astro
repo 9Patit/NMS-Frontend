@@ -1,4 +1,22 @@
----
+<!-- 
+ * ส่วนประกอบ Astro นี้แสดงถึงหน้าหลักของแอปพลิเคชัน
+ * 
+ * มันนำเข้า `Layout` และ `Maincontent` จากไดเรกทอรี `layouts`
+ * และฟังก์ชัน `authenticate` จากโมดูล `utils/auth`
+ * 
+ * ส่วนประกอบนี้เริ่มต้นตัวแปรสี่ตัว: `id`, `displayName`, `pictureUrl`, และ `role`
+ * 
+ * จากนั้นมันดึงวัตถุ request จาก `Astro.request` และเรียกฟังก์ชัน `authenticate`
+ * ด้วยวัตถุ request เพื่อยืนยันสถานะการรับรองความถูกต้องของผู้ใช้
+ * 
+ * หากผลการรับรองความถูกต้องมี URL สำหรับการเปลี่ยนเส้นทาง ส่วนประกอบจะเปลี่ยนเส้นทางผู้ใช้ไปยัง URL นั้น
+ * มิฉะนั้น มันจะดึง `displayName` และ `id` จากผลการรับรองความถูกต้อง
+ * 
+ * ส่วนประกอบนี้แสดง `Layout` ที่มีชื่อเรื่อง "Notice Me Senpai" และ `id` ของผู้ใช้
+ * และ `Maincontent` ที่มีชื่อเรื่อง "Notice Me Senpai" ซึ่งมีข้อความทักทายแสดง `displayName` ของผู้ใช้ 
+ -->
+ 
+ ---
 import Layout from "../layouts/Layout.astro";
 import Maincontent from "../layouts/Maincontent.astro";
 import { authenticate } from "../utils/auth";
@@ -18,6 +36,7 @@ if (authResult.redirect) {
  
 }
 ---
+
 
 <>
   <Layout title="Notice Me Senpai" id={id} />  

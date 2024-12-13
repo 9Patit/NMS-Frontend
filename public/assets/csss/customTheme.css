@@ -1,0 +1,504 @@
+.dataTables_filter {
+  text-align: right;
+}
+
+.dataTables_filter label,
+.dataTables_length label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;  
+}
+
+.display-groups {
+  display: flex;
+  gap: 10px;
+  
+}
+
+.outline-secondary {
+  border-color: #6c757d;
+  
+}
+
+.user-edit {
+  justify-content: space-between;
+  background-color: #fff;
+  box-sizing: border-box;
+}
+
+/* ==================================================================== */
+
+.name-edit {
+  display: flex;
+  align-items: center;
+}
+
+.name-edit a {
+  margin-left: 20px;
+}
+
+.profile-container {
+  display: flex;
+  align-items: flex-start;
+}
+
+.profile-picture {
+  margin-left: 20px;
+  max-width: 150px;
+  border-radius: 15px;
+  border: 2px solid #ddd;
+  box-shadow: 0 4px 8px rgba(33, 33, 33, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.profile-picture:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  justify-content: center;
+}
+.user-modal {
+  /* display: none; */
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  justify-content: center;
+} 
+
+.pp-modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  
+  background-color: rgba(0, 0, 0, 0.4);
+  align-items: center;
+  justify-content: center;
+} 
+
+.modal-content {
+  position: relative;
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 90%;
+  max-width: 800px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin: auto;
+  transform: translateY(0px);
+}
+
+.close-button {
+  position: absolute;
+  right: 25px;
+  top: 10px;
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+  color: black;
+  text-decoration: none;
+}
+
+
+
+.form-group label {
+  position: relative;
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  transition: color 0.2s ease;
+  margin-bottom: 0;
+  width: 100px; /* กำหนดขนาดของ label ตามที่ต้องการ */
+  text-align: right; /* จัดตำแหน่งข้อความของ label */
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #1f2937;
+  background-color: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.form-group input:hover,
+.form-group select:hover {
+  border-color: #9ca3af;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group input::placeholder {
+  color: #9ca3af;
+}
+
+/* สไตล์สำหรับอินพุตที่ถูกปิดการใช้งาน */
+.form-group input:disabled,
+.form-group select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* สไตล์สำหรับ select */
+.form-group select {
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+
+/* สถานะผิดพลาด */
+.form-group.error input,
+.form-group.error select {
+  border-color: #ef4444;
+}
+
+.form-group.error input:focus,
+.form-group.error select:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* สถานะสำเร็จ */
+.form-group.success input,
+.form-group.success select {
+  border-color: #10b981;
+}
+
+.form-group.success input:focus,
+.form-group.success select:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* การปรับแต่งสำหรับมือถือ */
+@media (max-width: 640px) {
+  .form-group input,
+  .form-group select {
+    font-size: 1rem;
+    padding: 0.625rem 0.875rem;
+  }
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  /* padding: 10px 20px; */
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: center;
+}
+
+/* ======================= */
+.profile-card {
+  position: relative;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;  
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.pp-edit-profile-card {
+  display: flex;
+  flex-direction: column;  
+  justify-content: center;
+  
+  background-color: #fefefe;
+  padding: 20px;
+  border: 1px solid #888;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 600px;
+}
+
+.profile-image {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.profile-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 4px solid #f0f2f5;
+  object-fit: cover;
+}
+
+.profile-info {
+  text-align: center;
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+  
+}
+
+.profile-nickname {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.profile-badges {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  color: white;
+}
+.leader-badge-light {
+  color: #1a213b;
+}
+
+
+.badge-status {
+  background-color: #22c55e;
+}
+
+.badge-role {
+  background-color: #3b82f6;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  flex: 1;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background-color: #f8fafc;
+}
+
+.detail-item i {
+  width: 20px;
+  text-align: center;
+}
+
+.group-list {
+ 
+  flex-wrap: wrap;
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.user-group-list {
+  display: flex;
+}
+
+
+.group-list li {
+  margin: 10px;
+  justify-content: flex-start;
+}
+
+.btn-outline-secondary {
+  font-size: 0.875rem;
+  color: #4b5563;
+  align-items: start;
+  justify-content: flex-start;
+  gap: 5px;
+}
+
+.btn-outline-secondary div {
+  display: flex;
+}
+
+.btn-outline-secondary i {
+  margin-right: 10px;
+}
+
+@media (max-width: 480px) {
+  .profile-card {
+    margin: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+.button-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.button-container .btn {
+  flex: 1;
+  text-align: center;
+}
+
+.edit-profile-name {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-profile-name input {
+  flex: 1;
+}
+
+.edit-select {
+  display: flex;
+  gap: 10px;
+  border-radius: 0.5rem;
+  margin-bottom: 15px;
+}
+
+.edit-select select {
+  border-radius: 0.5rem;
+}
+
+/* ====================================================== */
+
+.manage-groups {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.div-back-btn {
+  display: flex;
+  justify-content: flex-end;
+ 
+}
+
+.back-btn {  
+  color: #000000;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #676767;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.back-btn:active {
+  transform: scale(0.95);
+}
+.title-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.display-group-item {  
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+}
+.group-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #3d3d3d;
+}
+.group-btn {
+  font-weight: bold;
+  font-size: 0.75rem;  
+} 
+.index-content {
+  
+  background-color: #fff;
+}
+.display-title-group {
+  display: flex;  
+  align-items: center;  
+  color: #4b5563;
+}
+.gap {
+  margin-right: 10px;
+}
+@import url('https://fonts.googleapis.com/css?family=Sarabun|Kanit&display=swap');
+
+body {
+  font-family: 'Sarabun', sans-serif !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Kanit', sans-serif !important;
+}
+
+.pp-form-group {
+  margin-bottom: 15px;
+  text-align: right;
+  align-items: center;
+  gap: 10px; /* ระยะห่างระหว่าง label กับ input */
+}

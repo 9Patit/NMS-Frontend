@@ -1,40 +1,90 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useParams } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 interface UserData {
-  id: number;
-  first_name: string;
-  last_name: string;
-  nickname: string;
-  status: string;
-  verify: string;
-  tel: string;
-  email: string;
-  datetime: string;
-  groups: string[];
-  leaderGroups: string[];
-  line_usrphoto: string;
+  id: 0;
+  first_name: "";
+  last_name: "";
+  nickname: "";
+  status: "";
+  verify: "";
+  tel: "";
+  email: "";
+  datetime: "";
+  groups: [];
+  leaderGroups: [];
+  line_usrphoto: "abc";
+  auth_token?: string;
 }
 
-interface ProfileCardProps {
-  userData: UserData;
-}
-
-const ProfileCard: React.FC<ProfileCardProps> = ({
-  userData,
-}: ProfileCardProps) => {
+const ThirdPartyEditProfile: React.FC = () => {
+  const { userId } = useParams<{ userId: string }>();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState(userData);
+  const [formData, setFormData] = useState<UserData | null>(null);
+  const [userDetails, setUserDetails] = useState<UserData | null>(null);
   const apiUrl = import.meta.env.PUBLIC_API_KEY;
   const modalRef = useRef<HTMLDivElement>(null);
+  const ApiKey = process.env.VITE_PUBLIC_API_KEY || "default_API_KEY";
+  const PPUrL = process.env.VITE_PUBLIC_PP_URL || "default_PP_URL";
+
+  const transformVerify = (verify: string) => {
+    switch (verify) {
+      case "0":
+        return "รออนุมัติ";
+      case "1":
+        return "ใช้งาน";
+      case "10":
+        return "ออก";
+      default:
+        return verify;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth_token="))
+        ?.split("=")[1];
+
+      let id;
+      if (token) {
+        const decodedToken: any = jwtDecode(token);
+
+        // ดึง id จาก decoded token
+        id = decodedToken.id;
+      }
+
+      if (!id) return;
+
+      try {
+        const response = await axios.post(`${ApiKey}/pp-get-data-fromlink`, {
+          id: id,
+        });
+
+        const data = response.data;
+        data.verify = transformVerify(data.verify);
+        setFormData(data);
+        setUserDetails(data);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData) return;
+
     try {
       // แปลง id เป็น base64
-      const userId = btoa(userData.id?.toString() || "");
+      const userId = btoa(formData.id || "");
 
       // เตรียมข้อมูลที่จะส่งไป API
       const dataToUpdate = {
@@ -53,7 +103,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
       // เรียก API เพื่ออัพเดทข้อมูล
       const response = await axios.put(
-        `${apiUrl}/edit-user/${userId}`,
+        `${apiUrl}/pp-edit-user/${userId}`,
         dataToUpdate,
         {
           headers: {
@@ -96,7 +146,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   };
 
   const handleClose = () => {
-    window.location.href = "/";
+    window.location.href = PPUrL;
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -137,8 +187,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     };
   }, []);
 
+  if (!formData) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="profile-card">
+    <div className="pp-edit-profile-card">
       <div className="div-back-btn">
         <span className="back-btn" onClick={handleClose}>
           &times;
@@ -147,7 +201,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
       <div className="profile-image">
         <img
-          src={userData.line_usrphoto}
+          src={userDetails.line_usrphoto}
           alt="Profile Picture"
           className="profile-picture rounded-circle"
         />
@@ -155,58 +209,29 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 
       <div className="profile-info">
         <div className="profile-name">
-          {userData.first_name} {userData.last_name}
-          <div className="profile-nickname">{`(${userData.nickname})`}</div>
+          {userDetails.first_name} {userDetails.last_name}
+          <div className="profile-nickname">{`(${userDetails.nickname})`}</div>
         </div>
 
         <div className="profile-badges">
-          <span className="badge badge-role">{userData.status}</span>
-          <span className="badge badge-status">{userData.verify}</span>
+          <span className="badge badge-role">{userDetails.status}</span>
+          <span className="badge badge-status">{userDetails.verify}</span>
         </div>
 
         <div className="profile-details">
           <div className="detail-item">
             <i className="mdi mdi-tablet-android" />
-            <span>{userData.tel}</span>
+            <span>{userDetails.tel}</span>
           </div>
           <div className="detail-item">
             <i className="mdi mdi-email" />
-            <span>{userData.email}</span>
+            <span>{userDetails.email}</span>
           </div>
           <div className="detail-item">
             <i className="mdi mdi-calendar-month" />
-            <span>{formatDate(userData.datetime)}</span>
+            <span>{formatDate(userDetails.datetime)}</span>
           </div>
-          <div className="btn outline-secondary waves-effect waves-light ">
-            <div className="display-title-group">
-              <i className="mdi mdi-account-group gap" />
-              <span>กลุ่มที่สังกัด:</span>
-            </div>
 
-            <ul className="group-list user-group-list">
-              {userData.groups.length > 0 ? (
-                userData.groups.map((group) => <li key={group}>{group}</li>)
-              ) : (
-                <li>ไม่มีกลุ่ม</li>
-              )}
-            </ul>
-          </div>
-          <div className="btn outline-secondary waves-effect waves-light">
-            <div className="display-title-group">
-              <i className="mdi mdi-account-star gap" />
-              <span>กลุ่มที่เป็นLeader:</span>
-            </div>
-
-            <ul className="group-list user-group-list">
-              {userData.leaderGroups && userData.leaderGroups.length > 0 ? (
-                userData.leaderGroups.map((group) => (
-                  <li key={group}>{group}</li>
-                ))
-              ) : (
-                <li>ไม่มีกลุ่มที่เป็นLeader</li>
-              )}
-            </ul>
-          </div>
           <div className="button-container">
             <button
               className="btn btn-primary btn-sm"
@@ -229,7 +254,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </div>
             <div className="profile-image">
               <img
-                src={userData.line_usrphoto}
+                src={formData.line_usrphoto}
                 alt="Profile Picture"
                 className="profile-picture rounded-circle"
               />
@@ -272,14 +297,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                       id="nickname"
                       name="nickname"
                       placeholder="ชื่อเล่น"
-                      value={userData.nickname}
+                      value={formData.nickname}
                       onChange={handleInputChange}
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
-                  <label>เบอร์โทรศัพท์</label>
+                  <label>หมายเลขโทรศัพท์</label>
                   <input
                     className="form-control "
                     type="text"
@@ -291,7 +316,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   />
                 </div>
                 <div className="form-group">
-                  <label >ที่อยู่Email</label>
+                  <label>ที่อยู่อีเมลล์</label>
                   <input
                     className="form-control"
                     type="text"
@@ -302,8 +327,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     onChange={handleInputChange}
                   />
                 </div>
-
-                {/* btn btn-primary btn-sm */}
                 <div className="btn-submit">
                   <button className="btn btn-primary btn-sm" type="submit">
                     ยืนยันการแก้ไขข้อมูล
@@ -318,4 +341,4 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   );
 };
 
-export default ProfileCard;
+export default ThirdPartyEditProfile;

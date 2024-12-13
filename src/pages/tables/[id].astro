@@ -18,8 +18,6 @@ if (authResult.redirect) {
   // ถ้า token ถูกต้อง ให้ดึงข้อมูลที่จำเป็น
   userId = authResult.id;
   role = authResult.role;
-  
- 
 
   // ตรวจสอบว่า role เป็น hr หรือ super-admin หรือไม่
   if (role !== "hr" && role !== "super-admin") {
@@ -50,6 +48,8 @@ const fetchData = async () => {
 };
 
 let userData = await fetchData();
+console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa userData:", userData);
+
 
 function formatDate(dateString) {
   const date = new Date(dateString);
@@ -85,9 +85,32 @@ const defaultImageUrl = "/images/wtd.jpg";
 const profileImageUrl = (await checkImage(userData.line_usrphoto))
   ? userData.line_usrphoto
   : defaultImageUrl;
+
+  interface OptionsType {
+  branches: string[];
+  departments: string[];
+  groups: string[];
+}
+
+let Options: OptionsType = {
+  branches: [],
+  departments: [],
+  groups: [],
+};
+
+const fetchOptions = async () => {
+  try {
+    const response = await axios.post("http://localhost:5000/get-options");
+    Options = response.data;    
+  } catch (error) {
+    console.error("Failed to fetch branch options:", error);
+  }
+};
+
+await fetchOptions();
 ---
 
-<Layout title="User Profile" id={userId}/>
+<Layout title="User Profile" id={userId} />
 
 {
   userData ? (
@@ -108,10 +131,12 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
         <div class="profile-info">
           <div class="profile-name">
             {userData.first_name} {userData.last_name}
+            <div class="profile-nickname">{`(${userData.nickname})`}</div>
           </div>
-          <div class="profile-nickname">{`(${userData.nickname})`}</div>
 
           <div class="profile-badges">
+            <span class="badge badge-branch">{userData.branch_name}</span>
+            <span class="badge badge-department">{userData.department_name}</span>
             <span class="badge badge-role">{userData.status}</span>
             <span class="badge badge-status">{userData.verify}</span>
           </div>
@@ -182,7 +207,7 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
       {/* ====================================================================== */}
 
       <div id="token-modal" class="modal">
-        <div class="modal-content">
+        <div class="token-modal-content">
           <div class="title-card">
             <div>
               <h4>
@@ -193,42 +218,29 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
               <button class="token-back-btn back-btn">&times;</button>
             </div>
           </div>
-          {/* ตรวจสอบว่ามี token อยู่  */}
+
           {userData.tokens && userData.tokens.length > 0 ? (
             userData.tokens.map((token) => (
-              <>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    marginBottom: "10px",
-                    borderRadius: "5px",
-                    width: "100%",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <strong>Token ID:</strong> {token.id}
-                    <strong style={{ marginLeft: "10px" }}>
-                      สร้างเมื่อ:
-                    </strong>{" "}
-                    {new Date(token.createdAt).toLocaleString()}
-                    <strong style={{ marginLeft: "10px" }}>
-                      หมดอายุในอีก {calculateDaysRemaining(token.expiresAt)} วัน
-                    </strong>
-                  </div>
-                  <button
-                    class="btn btn-primary btn-sm"
-                    id="delete-token-button"
-                    data-id={id}
-                    data-token-id={token.id}
-                  >
-                    ลบ Token
-                  </button>
+              <div class="token-item">
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <strong>Token ID:</strong> {token.id}
+                  <strong style={{ marginLeft: "10px" }}>
+                    สร้างเมื่อ:
+                  </strong>{" "}
+                  {new Date(token.createdAt).toLocaleString()}
+                  <strong style={{ marginLeft: "10px" }}>
+                    หมดอายุในอีก {calculateDaysRemaining(token.expiresAt)} วัน
+                  </strong>
                 </div>
-              </>
+                <button
+                  class="btn btn-primary btn-sm"
+                  id="delete-token-button"
+                  data-id={id}
+                  data-token-id={token.id}
+                >
+                  ลบ Token
+                </button>
+              </div>
             ))
           ) : (
             <p>ไม่พบข้อมูล Token</p>
@@ -250,93 +262,143 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
 
           <div class="profile-info">
             <form>
-              <div class="edit-profile-name form-group ">
-                <input
-                  class="form-control "
-                  type="text"
-                  id="fname"
-                  name="first_name"
-                  value={userData.first_name}
-                  placeholder="ชื่อ"
-                />
-                <input
-                  class="form-control "
-                  type="text"
-                  id="lname"
-                  name="last_name"
-                  placeholder="นามสกุล"
-                  value={userData.last_name}
-                />
-              </div>
-              <div class=" form-group  ">
-                <input
-                  class="form-control"
-                  type="text"
-                  id="nickname"
-                  name="nickname"
-                  placeholder="ชื่อเล่น"
-                  value={userData.nickname}
-                />
+              <div class="edit-profile-name ">
+                <div class="form-group">
+                  <label for="fname">ชื่อ</label>
+                  <input
+                    class="form-control "
+                    type="text"
+                    id="fname"
+                    name="first_name"
+                    value={userData.first_name}
+                    placeholder="ชื่อ"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="lname">นามสกุล</label>
+                  <input
+                    class="form-control "
+                    type="text"
+                    id="lname"
+                    name="last_name"
+                    placeholder="นามสกุล"
+                    value={userData.last_name}
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="nickname">ชื่อเล่น</label>
+                  <input
+                    class="form-control "
+                    type="text"
+                    id="nickname"
+                    name="nickname"
+                    placeholder="ชื่อเล่น"
+                    value={userData.nickname}
+                  />
+                </div>
               </div>
 
               <div class="edit-select">
-                {role === "super-admin" && (
-                  <>
-                    <select id="status" name="status" class="custom-select">
-                      <option
-                        value="super-admin"
-                        selected={userData.status === "super-admin"}
-                      >
-                        ผู้ดูแลระบบ
+                <div class="edit-profile-name">
+                  <div class="form-group">
+                    <label for="branch">สาขา</label>
+                    <select id="branch" name="branch" class="custom-select ">
+                      {Options.branches.map((branch) => (
+                        <option
+                          value={branch}
+                          selected={userData.branch_name === branch}
+                        >
+                          {branch}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="department">แผนก</label>
+                    <select
+                      id="department"
+                      name="department"
+                      class="custom-select "
+                    >
+                       {Options.departments.map((department) => (
+                        <option value={department} selected={userData.branch_name === department} >
+                          {department}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {role === "super-admin" && (
+                    <div class="form-group">
+                      <label for="status">สิทธิ์</label>
+                      <select id="status" name="status" class="custom-select">
+                        <option
+                          value="super-admin"
+                          selected={userData.status === "super-admin"}
+                        >
+                          ผู้ดูแลระบบ
+                        </option>
+                        <option
+                          value="user"
+                          selected={userData.status === "user"}
+                        >
+                          ที่ปรึกษาฝ่ายขาย
+                        </option>
+                        <option
+                          value="admin"
+                          selected={userData.status === "admin"}
+                        >
+                          ผู้ตรวจเอกสาร(TBR)
+                        </option>
+                        <option
+                          value="crl"
+                          selected={userData.status === "crl"}
+                        >
+                          ลูกค้าสัมพันธ์
+                        </option>
+                        <option
+                          value="d2s"
+                          selected={userData.status === "d2s"}
+                        >
+                          ฝ่ายการตลาด(D2S)
+                        </option>
+                        <option
+                          value="leader"
+                          selected={userData.status === "leader"}
+                        >
+                          ผู้จัดการทีมขาย
+                        </option>
+                        <option value="hr" selected={userData.status === "hr"}>
+                          ฝ่ายบุคคล
+                        </option>
+                      </select>
+                    </div>
+                  )}
+
+                  <div class="form-group">
+                    <label for="verify">สถานะ</label>
+                    <select id="verify" name="verify" class="custom-select ">
+                      <option value="ใช้งาน" selected={userData.verify === "1"}>
+                        ใช้งาน
+                      </option>
+                      <option value="ออก" selected={userData.verify === "0"}>
+                        ยังไม่อนุมัติ
                       </option>
                       <option
-                        value="user"
-                        selected={userData.status === "user"}
+                        value="ยังไม่อนุมัติ"
+                        selected={userData.verify === "10"}
                       >
-                        ที่ปรึกษาฝ่ายขาย
-                      </option>
-                      <option
-                        value="admin"
-                        selected={userData.status === "admin"}
-                      >
-                        ผู้ตรวจเอกสาร(TBR)
-                      </option>
-                      <option value="crl" selected={userData.status === "crl"}>
-                        ลูกค้าสัมพันธ์
-                      </option>
-                      <option value="d2s" selected={userData.status === "d2s"}>
-                        ฝ่ายการตลาด(D2S)
-                      </option>
-                      <option
-                        value="leader"
-                        selected={userData.status === "leader"}
-                      >
-                        ผู้จัดการทีมขาย
-                      </option>
-                      <option value="hr" selected={userData.status === "hr"}>
-                        ฝ่ายบุคคล
+                        ออก
                       </option>
                     </select>
-                  </>
-                )}
-
-                <select id="verify" name="verify" class="custom-select ">
-                  <option value="ใช้งาน" selected={userData.verify === "1"}>
-                    ใช้งาน
-                  </option>
-                  <option value="ออก" selected={userData.verify === "0"}>
-                    ยังไม่อนุมัติ
-                  </option>
-                  <option
-                    value="ยังไม่อนุมัติ"
-                    selected={userData.verify === "10"}
-                  >
-                    ออก
-                  </option>
-                </select>
+                  </div>
+                </div>
               </div>
 
               <div class="form-group">
+                <label for="tel">เบอร์โทรศัพท์</label>
                 <input
                   class="form-control "
                   type="text"
@@ -346,7 +408,9 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
                   value={userData.tel}
                 />
               </div>
+
               <div class="form-group">
+                <label for="email">ที่อยู่Email</label>
                 <input
                   class="form-control"
                   type="text"
@@ -357,12 +421,18 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
                 />
               </div>
 
-              {role === "super-admin" && (
-                <input type="submit" value="ยืนยัน" class="btn btn-primary" />
-              )}
-              {role === "hr" && (
-                <input type="submit" value="Submit" class="btn btn-secondary" />
-              )}
+              <div class="btn-submit">
+                {role === "super-admin" && (
+                  <input type="submit" value="ยืนยัน" class="btn btn-primary" />
+                )}
+                {role === "hr" && (
+                  <input
+                    type="submit"
+                    value="Submit"
+                    class="btn btn-secondary"
+                  />
+                )}
+              </div>
             </form>
           </div>
         </div>
@@ -374,356 +444,6 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
     </Maincontent>
   )
 }
-
-<style>
-  .name-edit {
-    display: flex;
-    align-items: center;
-  }
-  .name-edit a {
-    margin-left: 20px;
-  }
-
-  .profile-container {
-    display: flex;
-    align-items: flex-start;
-  }
-
-  .profile-picture {
-    margin-left: 20px;
-    max-width: 150px;
-    border-radius: 15px;
-    border: 2px solid #ddd;
-    box-shadow: 0 4px 8px rgba(33, 33, 33, 0.3);
-    transition:
-      transform 0.2s ease,
-      box-shadow 0.3s ease;
-  }
-
-  .profile-picture:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
-  }
-  
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1050;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
-    align-items: center;
-    justify-content: center;
-  }
-
-  .modal-content {
-    position: relative;
-    background-color: #fefefe;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 90%;
-    max-width: 800px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    margin: auto;
-    transform: translateY(90px);
-  }
-
-  .close-button {
-    position: absolute;
-    right: 25px;
-    top: 10px;
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
-  }
-  .close-button:hover,
-  .close-button:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  .form-group {
-    margin-bottom: 15px;
-  }
-  .form-group label {
-    position: relative;
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #374151;
-    font-size: 0.875rem;
-    transition: color 0.2s ease;
-  }
-  .form-group input {
-    width: 100%;
-    padding: 10px;
-    box-sizing: border-box;
-  }
-  .btn-primary {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-  }
-  .btn-primary:hover {
-    background-color: #0056b3;
-  }
-
-  .form-group input,
-  .form-group select {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    line-height: 1.5;
-    color: #1f2937;
-    background-color: #fff;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  .form-group input:hover,
-  .form-group select:hover {
-    border-color: #9ca3af;
-  }
-
-  .form-group input:focus,
-  .form-group select:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-  }
-
-  .form-group input::placeholder {
-    color: #9ca3af;
-  }
-
-  /* สไตล์สำหรับอินพุตที่ถูกปิดการใช้งาน */
-  .form-group input:disabled,
-  .form-group select:disabled {
-    background-color: #f3f4f6;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-
-  /* สไตล์สำหรับ select */
-  .form-group select {
-    appearance: none;
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 1rem;
-    padding-right: 2.5rem;
-  }
-
-  /* สถานะผิดพลาด */
-  .form-group.error input,
-  .form-group.error select {
-    border-color: #ef4444;
-  }
-
-  .form-group.error input:focus,
-  .form-group.error select:focus {
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-  }
-
-  /* สถานะสำเร็จ */
-  .form-group.success input,
-  .form-group.success select {
-    border-color: #10b981;
-  }
-
-  .form-group.success input:focus,
-  .form-group.success select:focus {
-    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-  }
-
-  /* การปรับแต่งสำหรับมือถือ */
-  @media (max-width: 640px) {
-    .form-group input,
-    .form-group select {
-      font-size: 1rem;
-      padding: 0.625rem 0.875rem;
-    }
-  }
-  .form-group {
-    display: flex;
-    align-items: center;
-    gap: 10px; /* ระยะห่างระหว่าง label กับ input */
-    margin-bottom: 15px;
-  }
-
-  .form-group label {
-    margin-bottom: 0;
-    width: 100px; /* กำหนดขนาดของ label ตามที่ต้องการ */
-    text-align: right; /* จัดตำแหน่งข้อความของ label */
-  }
-
-  .form-group input {
-    flex: 1;
-    padding: 8px;
-  }
-  .modal-header {
-    display: flex;
-    justify-content: center;
-  }
-
-  /* ======================= */
-  .profile-card {
-    position: relative;
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 600px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-  }
-  .close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    color: #aaa;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .close-button:hover,
-  .close-button:focus {
-    color: black;
-    text-decoration: none;
-  }
-  .profile-image {
-    text-align: center;
-    margin-bottom: 1.5rem;
-  }
-  .profile-image img {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    border: 4px solid #f0f2f5;
-    object-fit: cover;
-  }
-  .profile-info {
-    text-align: center;
-  }
-
-  .profile-name {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #1a1a1a;
-    margin-bottom: 0.5rem;
-  }
-
-  .profile-nickname {
-    color: #666;
-    margin-bottom: 1rem;
-  }
-
-  .profile-badges {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-  }
-
-  .badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    color: white;
-  }
-
-  .badge-status {
-    background-color: #22c55e;
-  }
-
-  .badge-role {
-    background-color: #3b82f6;
-  }
-
-  .profile-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    width: 100%;
-    flex: 1;
-  }
-
-  .detail-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #4b5563;
-    padding: 0.5rem;
-    border-radius: 8px;
-    background-color: #f8fafc;
-  }
-
-  .detail-item i {
-    width: 20px;
-    text-align: center;
-  }
-
-  .group-list {
-    display: flex;
-    flex-wrap: wrap;
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-
-  .group-list li {
-    margin-right: 10px;
-    justify-content: flex-start;
-  }
-
-  .btn-outline-secondary {
-    font-size: 0.875rem;
-    color: #4b5563;
-    align-items: start;
-    justify-content: flex-start; /* จัดตำแหน่งองค์ประกอบภายในให้ชิดซ้าย */
-    gap: 5px;
-  }
-
-  .btn-outline-secondary div {
-    display: flex;
-  }
-
-  .btn-outline-secondary i {
-    margin-right: 10px;
-  }
-
-  @media (max-width: 480px) {
-    .profile-card {
-      margin: 1rem;
-      padding: 1.5rem;
-    }
-  }
-  .button-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .button-container .btn {
-    flex: 1;
-    text-align: center;
-  }
-  .edit-profile-name {
-    display: flex;
-    gap: 10px;
-  }
-  .edit-profile-name input {
-    flex: 1;
-  }
-</style>
 
 <script>
   import axios from "axios";
@@ -766,6 +486,8 @@ const profileImageUrl = (await checkImage(userData.line_usrphoto))
 
       const formData = new FormData(form);
       const data = Object.fromEntries(formData.entries());
+      console.log("data:", data);
+      
 
       const currentUrl = window.location.href;
       const base64Id = currentUrl.split("/").pop();
